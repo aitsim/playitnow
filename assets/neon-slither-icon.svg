@@ -1,0 +1,31 @@
+<svg viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Neon Slither icon">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2f2148"/>
+      <stop offset="100%" stop-color="#1c1533"/>
+    </linearGradient>
+    <linearGradient id="coilGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f2b134"/>
+      <stop offset="100%" stop-color="#ff6f59"/>
+    </linearGradient>
+    <filter id="glow2" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect x="0" y="0" width="140" height="140" rx="28" fill="url(#bg)"/>
+
+  <g filter="url(#glow2)">
+    <path d="M22,112 C18,74 44,34 84,36 C124,38 132,78 104,96 C80,111 54,98 58,74 C61,55 82,48 96,60"
+          fill="none" stroke="url(#coilGrad2)" stroke-width="13"
+          stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="96" cy="60" r="10" fill="#f2b134"/>
+    <circle cx="99" cy="57" r="2.4" fill="#150f22"/>
+  </g>
+
+  <circle cx="118" cy="108" r="5" fill="#6ee7ff" opacity="0.9"/>
+</svg>

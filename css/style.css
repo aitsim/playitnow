@@ -1,0 +1,538 @@
+/* =========================================================
+   Design tokens
+   Theme: arcade marquee — deep plum stage, warm gold + coral
+   neon accents, chunky pixel display face used sparingly,
+   clean geometric body face for everything else.
+   ========================================================= */
+:root {
+  --stage: #221735;
+  --stage-raised: #2f2148;
+  --stage-line: #3c2b5c;
+  --ink: #f4eefd;
+  --ink-dim: #b8a9d6;
+  --gold: #f2b134;
+  --coral: #ff6f59;
+  --focus: #6ee7ff;
+
+  --font-display: 'Press Start 2P', 'Courier New', monospace;
+  --font-body: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  --radius: 10px;
+  --max-width: 960px;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--stage);
+  background-image:
+    radial-gradient(circle at 15% 0%, rgba(242, 177, 52, 0.08), transparent 45%),
+    radial-gradient(circle at 85% 10%, rgba(255, 111, 89, 0.08), transparent 40%);
+  color: var(--ink);
+  font-family: var(--font-body);
+  line-height: 1.6;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+a { color: var(--gold); text-decoration: none; }
+a:hover { color: var(--coral); text-decoration: underline; }
+
+*:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
+/* ---------- Marquee header ---------- */
+.marquee {
+  border-bottom: 1px solid var(--stage-line);
+  background: linear-gradient(180deg, var(--stage-raised), var(--stage));
+}
+
+.marquee__bar {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 1.1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.marquee__title {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.marquee__title:hover {
+  color: var(--gold);
+  text-decoration: none;
+}
+
+.marquee__title::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--coral);
+  box-shadow: 0 0 8px 1px var(--coral);
+  flex-shrink: 0;
+}
+
+.marquee__nav {
+  display: flex;
+  gap: 1.4rem;
+  font-size: 0.92rem;
+}
+
+.marquee__nav a {
+  color: var(--ink-dim);
+}
+.marquee__nav a:hover,
+.marquee__nav a[aria-current="page"] {
+  color: var(--gold);
+  text-decoration: none;
+}
+
+/* ---------- Main content shell ---------- */
+main {
+  flex: 1;
+  max-width: var(--max-width);
+  width: 100%;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 4rem;
+}
+
+.eyebrow {
+  font-family: var(--font-display);
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  color: var(--coral);
+  text-transform: uppercase;
+  margin: 0 0 0.9rem;
+}
+
+h1 {
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  margin: 0 0 0.6rem;
+  line-height: 1.15;
+}
+
+.subhead {
+  color: var(--ink-dim);
+  font-size: 1.05rem;
+  max-width: 60ch;
+  margin: 0 0 2rem;
+}
+
+h2 {
+  font-size: 1.3rem;
+  margin: 2.2rem 0 0.8rem;
+  color: var(--ink);
+}
+
+p { color: var(--ink-dim); }
+
+/* ---------- Arcade cabinet frame around the game ---------- */
+.cabinet {
+  position: relative;
+  background: #150f22;
+  border: 1px solid var(--stage-line);
+  border-radius: var(--radius);
+  padding: 14px;
+  box-shadow:
+    0 0 0 1px rgba(242, 177, 52, 0.08),
+    0 20px 50px -20px rgba(0, 0, 0, 0.6);
+}
+
+.cabinet::before,
+.cabinet::after {
+  content: "";
+  position: absolute;
+  top: 10px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--stage-line);
+}
+.cabinet::before { left: 10px; }
+.cabinet::after { right: 10px; }
+
+.cabinet__screen {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #000;
+}
+
+.cabinet__screen iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+
+/* subtle CRT scanline overlay — decorative, doesn't block input */
+.cabinet__screen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.12) 0px,
+    rgba(0, 0, 0, 0.12) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  mix-blend-mode: multiply;
+  opacity: 0.5;
+}
+
+.cabinet__meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.7rem 0.3rem 0.1rem;
+  font-size: 0.8rem;
+  color: var(--ink-dim);
+}
+
+.cabinet__meta .badge {
+  font-family: var(--font-display);
+  font-size: 0.55rem;
+  letter-spacing: 0.08em;
+  color: var(--gold);
+  border: 1px solid var(--stage-line);
+  border-radius: 999px;
+  padding: 0.35rem 0.6rem;
+}
+
+/* ---------- Generic content blocks (legal pages) ---------- */
+.card {
+  background: var(--stage-raised);
+  border: 1px solid var(--stage-line);
+  border-radius: var(--radius);
+  padding: 1.6rem 1.8rem;
+  margin-bottom: 1.2rem;
+}
+
+ul.plain {
+  padding-left: 1.2rem;
+  color: var(--ink-dim);
+}
+ul.plain li { margin-bottom: 0.4rem; }
+
+/* ---------- Forms ---------- */
+form {
+  display: grid;
+  gap: 1rem;
+  max-width: 480px;
+}
+
+label {
+  display: grid;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  color: var(--ink-dim);
+}
+
+input, textarea {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--ink);
+  background: #150f22;
+  border: 1px solid var(--stage-line);
+  border-radius: 6px;
+  padding: 0.7rem 0.8rem;
+}
+
+input:focus, textarea:focus {
+  border-color: var(--focus);
+}
+
+button {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #1a1226;
+  background: var(--gold);
+  border: none;
+  border-radius: 6px;
+  padding: 0.8rem 1.4rem;
+  cursor: pointer;
+  width: fit-content;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+button:hover {
+  background: var(--coral);
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+/* ---------- Footer ---------- */
+footer {
+  border-top: 1px solid var(--stage-line);
+  padding: 1.6rem 1.5rem;
+}
+
+.footer__bar {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  font-size: 0.85rem;
+  color: var(--ink-dim);
+}
+
+.footer__links {
+  display: flex;
+  gap: 1.2rem;
+}
+
+/* ---------- Screenshot gallery (game pages) ---------- */
+.screenshot-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin: 1rem 0 2rem;
+}
+
+.screenshot-gallery figure {
+  margin: 0;
+  background: #150f22;
+  border: 1px solid var(--stage-line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.screenshot-gallery img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+.screenshot-gallery figcaption {
+  padding: 0.6rem 0.8rem;
+  font-size: 0.8rem;
+  color: var(--ink-dim);
+}
+
+/* ---------- Game grid (homepage listing) ---------- */
+.game-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1.2rem;
+  margin: 1.5rem 0 2.5rem;
+}
+
+.game-card {
+  display: block;
+  background: var(--stage-raised);
+  border: 1px solid var(--stage-line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  text-decoration: none;
+  color: var(--ink);
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.game-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--gold);
+  text-decoration: none;
+  color: var(--ink);
+}
+
+.game-card__thumb {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: linear-gradient(135deg, #150f22, #241b38);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 0.6rem;
+  color: var(--ink-dim);
+  text-align: center;
+  padding: 1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.game-card__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  inset: 0;
+}
+
+
+.game-card__body {
+  padding: 0.9rem 1rem 1.1rem;
+}
+
+.game-card__title {
+  font-weight: 600;
+  font-size: 1rem;
+  margin: 0 0 0.3rem;
+}
+
+.game-card__tag {
+  font-size: 0.8rem;
+  color: var(--ink-dim);
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 1.2rem;
+  font-size: 0.9rem;
+  color: var(--ink-dim);
+}
+.back-link:hover { color: var(--gold); }
+
+/* ---------- Ad slot placeholders ---------- */
+.ad-slot {
+  border: 1px dashed var(--stage-line);
+  border-radius: 8px;
+  color: var(--ink-dim);
+  font-size: 0.8rem;
+  text-align: center;
+  padding: 1.2rem;
+  margin: 1.6rem 0;
+}
+
+/* ---------- Motion & mobile ---------- */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+
+@media (max-width: 600px) {
+  .marquee__bar { flex-direction: column; align-items: flex-start; }
+  main { padding: 2rem 1.1rem 3rem; }
+}
+
+
+.hub-info {
+  margin-top: 2.5rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--stage-line);
+}
+.hub-info h2 {
+  font-size: 1.5rem;
+  margin-top: 0;
+}
+
+/* ---------- Tag list (game feature pills) ---------- */
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0 0 1.6rem;
+}
+
+.tag-list span {
+  font-size: 0.78rem;
+  color: var(--ink-dim);
+  border: 1px solid var(--stage-line);
+  background: var(--stage-raised);
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+}
+
+/* ---------- Info table (controls, etc.) ---------- */
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.8rem 0 1.6rem;
+  background: var(--stage-raised);
+  border: 1px solid var(--stage-line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.info-table th,
+.info-table td {
+  text-align: left;
+  padding: 0.7rem 0.9rem;
+  border-bottom: 1px solid var(--stage-line);
+  font-size: 0.9rem;
+}
+
+.info-table th {
+  font-family: var(--font-display);
+  font-size: 0.6rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gold);
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.info-table td { color: var(--ink-dim); }
+
+.info-table tbody tr:last-child td { border-bottom: none; }
+
+/* ---------- FAQ accordion ---------- */
+.faq-item {
+  background: var(--stage-raised);
+  border: 1px solid var(--stage-line);
+  border-radius: var(--radius);
+  margin-bottom: 0.7rem;
+  overflow: hidden;
+}
+
+.faq-item summary {
+  cursor: pointer;
+  padding: 0.9rem 1.1rem;
+  font-weight: 600;
+  color: var(--ink);
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.faq-item summary::-webkit-details-marker { display: none; }
+
+.faq-item summary::after {
+  content: "+";
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  color: var(--gold);
+  margin-left: 1rem;
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+.faq-item[open] summary::after {
+  transform: rotate(45deg);
+}
+
+.faq-item summary:hover { color: var(--gold); }
+
+.faq-item p,
+.faq-item ul {
+  padding: 0 1.1rem 1rem;
+  margin: 0;
+}
+
+.faq-item ul { padding-left: 2.2rem; }

@@ -1,0 +1,43 @@
+<svg viewBox="0 0 560 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Neon Onslaught logo">
+  <defs>
+    <linearGradient id="burstGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff6f59"/>
+      <stop offset="100%" stop-color="#f2b134"/>
+    </linearGradient>
+    <linearGradient id="textGradO" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ff6f59"/>
+      <stop offset="55%" stop-color="#f2b134"/>
+      <stop offset="100%" stop-color="#f2b134"/>
+    </linearGradient>
+    <filter id="glowO" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="4.5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="glowSoftO" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="2.2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- burst mark -->
+  <g filter="url(#glowO)" transform="translate(-8,-3)">
+    <path d="M70,28 L76.89,53.37 L99.7,40.3 L86.63,63.11 L112,70 L86.63,76.89 L99.7,99.7 L76.89,86.63 L70,112 L63.11,86.63 L40.3,99.7 L53.37,76.89 L28,70 L53.37,63.11 L40.3,40.3 L63.11,53.37 Z"
+          fill="url(#burstGrad)"/>
+    <circle cx="70" cy="70" r="9" fill="#150f22"/>
+  </g>
+
+  <!-- orb accents -->
+  <circle cx="110" cy="112" r="4" fill="#6ee7ff" filter="url(#glowSoftO)"/>
+
+  <!-- wordmark -->
+  <text x="128" y="78" font-family="'Press Start 2P','Courier New',monospace"
+        font-size="30" fill="url(#textGradO)" filter="url(#glowSoftO)">NEON</text>
+  <text x="128" y="112" font-family="'Press Start 2P','Courier New',monospace"
+        font-size="26" fill="#f4eefd">ONSLAUGHT</text>
+</svg>

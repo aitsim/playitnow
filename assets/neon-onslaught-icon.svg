@@ -1,0 +1,29 @@
+<svg viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Neon Onslaught icon">
+  <defs>
+    <linearGradient id="bgO" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2f2148"/>
+      <stop offset="100%" stop-color="#1c1533"/>
+    </linearGradient>
+    <linearGradient id="burstGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff6f59"/>
+      <stop offset="100%" stop-color="#f2b134"/>
+    </linearGradient>
+    <filter id="glowO2" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect x="0" y="0" width="140" height="140" rx="28" fill="url(#bgO)"/>
+
+  <g filter="url(#glowO2)">
+    <path d="M70,28 L76.89,53.37 L99.7,40.3 L86.63,63.11 L112,70 L86.63,76.89 L99.7,99.7 L76.89,86.63 L70,112 L63.11,86.63 L40.3,99.7 L53.37,76.89 L28,70 L53.37,63.11 L40.3,40.3 L63.11,53.37 Z"
+          fill="url(#burstGrad2)"/>
+    <circle cx="70" cy="70" r="9" fill="#150f22"/>
+  </g>
+
+  <circle cx="118" cy="24" r="5" fill="#6ee7ff" opacity="0.9"/>
+</svg>

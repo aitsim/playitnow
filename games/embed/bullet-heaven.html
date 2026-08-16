@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Neon Onslaught</title>
+<style>
+  :root {
+    --bg: #0d0a1a;
+    --grid: #1b1533;
+    --ink: #f4eefd;
+    --ink-dim: #9c8fc2;
+    --gold: #f2b134;
+    --coral: #ff6f59;
+    --cyan: #6ee7ff;
+    --hp: #ff6f59;
+    --xp: #6ee7ff;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--bg);
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: none;
+  }
+  #game-wrap {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: var(--bg);
+    cursor: crosshair;
+  }
+  #hud {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    color: var(--ink);
+    font-size: 12px;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  #hud .row { display: flex; align-items: center; gap: 8px; }
+  #hud .label { color: var(--ink-dim); min-width: 42px; }
+  .bar-track {
+    flex: 1;
+    max-width: 220px;
+    height: 8px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .bar-fill { height: 100%; border-radius: 4px; transition: width 0.15s ease; }
+  #hp-fill { background: linear-gradient(90deg, var(--coral), #ff9b59); }
+  #xp-fill { background: linear-gradient(90deg, var(--cyan), #9d7bff); }
+  #hud .timer { font-weight: 700; color: var(--gold); }
+  #hud .level { font-weight: 700; color: var(--cyan); }
+
+  #hint {
+    position: absolute;
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: var(--ink-dim);
+    font-size: 12px;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+    pointer-events: none;
+    white-space: nowrap;
+  }
+
+  #overlay, #levelup {
+    position: absolute;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    background: rgba(13, 10, 26, 0.86);
+    color: var(--ink);
+    text-align: center;
+    padding: 1.5rem;
+  }
+  #overlay.show, #levelup.show { display: flex; }
+  #overlay h2 {
+    font-size: 1.6rem;
+    margin: 0 0 0.3rem;
+    color: var(--coral);
+  }
+  #overlay p, #levelup p {
+    color: var(--ink-dim);
+    margin: 0 0 1.2rem;
+    font-size: 0.95rem;
+  }
+  #overlay button {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1a1226;
+    background: var(--gold);
+    border: none;
+    border-radius: 6px;
+    padding: 0.75rem 1.6rem;
+    cursor: pointer;
+  }
+  #overlay button:hover { background: var(--coral); }
+
+  #levelup h2 { font-size: 1.4rem; margin: 0 0 1rem; color: var(--cyan); }
+  .upgrade-cards { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; max-width: 480px; }
+  .upgrade-card {
+    background: #1c1533;
+    border: 1px solid var(--grid);
+    border-radius: 10px;
+    padding: 1rem;
+    width: 140px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, transform 0.15s ease;
+  }
+  .upgrade-card:hover { border-color: var(--gold); transform: translateY(-3px); }
+  .upgrade-card .name { font-weight: 700; color: var(--gold); font-size: 0.95rem; margin-bottom: 0.4rem; }
+  .upgrade-card .desc { color: var(--ink-dim); font-size: 0.78rem; }
+
+  #start-screen {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    background: var(--bg);
+    color: var(--ink);
+    text-align: center;
+    padding: 1.5rem;
+    z-index: 5;
+  }
+  #start-screen h1 {
+    font-size: 1.6rem;
+    margin: 0 0 0.4rem;
+    background: linear-gradient(90deg, var(--coral), var(--gold));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  #start-screen p {
+    color: var(--ink-dim);
+    max-width: 380px;
+    margin: 0 0 1.4rem;
+    font-size: 0.92rem;
+  }
+  #start-screen button {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #1a1226;
+    background: var(--gold);
+    border: none;
+    border-radius: 8px;
+    padding: 0.85rem 2rem;
+    cursor: pointer;
+  }
+  #start-screen button:hover { background: var(--coral); }
+</style>
+</head>
+<body>
+<div id="game-wrap">
+  <canvas id="game"></canvas>
+
+  <div id="hud">
+    <div class="row">
+      <span class="timer" id="hud-timer">00:00</span>
+      <span class="level" id="hud-level">Lv 1</span>
+    </div>
+    <div class="row">
+      <span class="label">HP</span>
+      <div class="bar-track"><div class="bar-fill" id="hp-fill" style="width:100%;"></div></div>
+    </div>
+    <div class="row">
+      <span class="label">XP</span>
+      <div class="bar-track"><div class="bar-fill" id="xp-fill" style="width:0%;"></div></div>
+    </div>
+  </div>
+  <div id="hint">Move mouse / drag finger to move &middot; you auto-fire at nearby enemies</div>
+
+  <div id="overlay">
+    <h2 id="overlay-title">You Fell</h2>
+    <p id="overlay-sub">Survived 0:00 &middot; Level 1</p>
+    <button id="retry-btn">Play Again</button>
+  </div>
+
+  <div id="levelup">
+    <h2>Level Up! Choose an upgrade</h2>
+    <div class="upgrade-cards" id="upgrade-cards"></div>
+  </div>
+
+  <div id="start-screen">
+    <h1>NEON ONSLAUGHT</h1>
+    <p>Move to dodge the swarm. You auto-fire at the nearest enemy — survive as long as you can and level up to grow stronger.</p>
+    <button id="start-btn">Start</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const wrap = document.getElementById('game-wrap');
+  const hudTimer = document.getElementById('hud-timer');
+  const hudLevel = document.getElementById('hud-level');
+  const hpFill = document.getElementById('hp-fill');
+  const xpFill = document.getElementById('xp-fill');
+  const overlay = document.getElementById('overlay');
+  const overlayTitle = document.getElementById('overlay-title');
+  const overlaySub = document.getElementById('overlay-sub');
+  const retryBtn = document.getElementById('retry-btn');
+  const levelup = document.getElementById('levelup');
+  const upgradeCardsEl = document.getElementById('upgrade-cards');
+  const startScreen = document.getElementById('start-screen');
+  const startBtn = document.getElementById('start-btn');
+
+  let W, H, DPR;
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = wrap.clientWidth;
+    H = wrap.clientHeight;
+    canvas.width = W * DPR;
+    canvas.height = H * DPR;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+  window.addEventListener('resize', resize);
+
+  function rand(min, max) { return Math.random() * (max - min) + min; }
+  function dist2(ax, ay, bx, by) { const dx = ax - bx, dy = ay - by; return dx * dx + dy * dy; }
+
+  let running = false;
+  let lastTime = 0;
+  let elapsed = 0;
+  let mouse = { x: 0, y: 0 };
+
+  let player, enemies, projectiles, orbs, particles;
+  let spawnTimer, nextFireIn;
+  let level, xp, xpToNext;
+
+  const BASE_PLAYER_SPEED = 220;
+  const PLAYER_RADIUS = 12;
+  const BASE_FIRE_INTERVAL = 0.55;
+  const PROJECTILE_SPEED = 420;
+  const BASE_PICKUP_RADIUS = 60;
+
+  function makePlayer() {
+    return {
+      x: 0, y: 0,
+      speed: BASE_PLAYER_SPEED,
+      maxHp: 100,
+      hp: 100,
+      damage: 3,
+      fireInterval: BASE_FIRE_INTERVAL,
+      multishot: 1,
+      pickupRadius: BASE_PICKUP_RADIUS,
+      invulnUntil: 0,
+    };
+  }
+
+  function resetWorld() {
+    player = makePlayer();
+    enemies = [];
+    projectiles = [];
+    orbs = [];
+    particles = [];
+    spawnTimer = 0.6;
+    nextFireIn = player.fireInterval;
+    level = 1;
+    xp = 0;
+    xpToNext = 6;
+    elapsed = 0;
+    mouse.x = W / 2; mouse.y = H / 2;
+  }
+
+  const ENEMY_TYPES = [
+    { key: 'swarm', r: 10, hp: 3, speed: 95, color: '#ff6f59', glow: 'rgba(255,111,89,0.5)', xp: 1, dmg: 8, weight: 4 },
+    { key: 'brute', r: 16, hp: 9, speed: 55, color: '#9d7bff', glow: 'rgba(157,123,255,0.5)', xp: 3, dmg: 14, weight: 1 },
+  ];
+  function pickEnemyType() {
+    const total = ENEMY_TYPES.reduce((s, t) => s + t.weight, 0);
+    let r = rand(0, total);
+    for (const t of ENEMY_TYPES) { if (r < t.weight) return t; r -= t.weight; }
+    return ENEMY_TYPES[0];
+  }
+
+  function spawnEnemy() {
+    const type = pickEnemyType();
+    const angle = rand(0, Math.PI * 2);
+    const spawnDist = Math.max(W, H) * 0.65 + 60;
+    const difficulty = 1 + elapsed / 55;
+    enemies.push({
+      x: player.x + Math.cos(angle) * spawnDist,
+      y: player.y + Math.sin(angle) * spawnDist,
+      r: type.r,
+      hp: type.hp * difficulty,
+      maxHp: type.hp * difficulty,
+      speed: type.speed * Math.min(1.4, 1 + elapsed / 200),
+      color: type.color,
+      glow: type.glow,
+      xp: type.xp,
+      dmg: type.dmg,
+    });
+  }
+
+  function spawnInterval() {
+    return Math.max(0.22, 1.1 - elapsed / 60);
+  }
+
+  // ---------- Input ----------
+  function updatePointer(clientX, clientY) {
+    const rect = canvas.getBoundingClientRect();
+    mouse.x = clientX - rect.left;
+    mouse.y = clientY - rect.top;
+  }
+  canvas.addEventListener('mousemove', (e) => updatePointer(e.clientX, e.clientY));
+  canvas.addEventListener('touchstart', (e) => {
+    const t = e.touches[0]; updatePointer(t.clientX, t.clientY);
+    e.preventDefault();
+  }, { passive: false });
+  canvas.addEventListener('touchmove', (e) => {
+    const t = e.touches[0]; updatePointer(t.clientX, t.clientY);
+    e.preventDefault();
+  }, { passive: false });
+
+  function updatePlayer(dt) {
+    const dx = mouse.x - W / 2;
+    const dy = mouse.y - H / 2;
+    const d = Math.sqrt(dx * dx + dy * dy);
+    const deadzone = 8;
+    if (d > deadzone) {
+      const t = Math.min(1, (d - deadzone) / 120);
+      const nx = dx / d, ny = dy / d;
+      player.x += nx * player.speed * t * dt;
+      player.y += ny * player.speed * t * dt;
+    }
+  }
+
+  function nearestEnemy() {
+    let best = null, bestD = Infinity;
+    for (const e of enemies) {
+      const d = dist2(player.x, player.y, e.x, e.y);
+      if (d < bestD) { bestD = d; best = e; }
+    }
+    return best;
+  }
+
+  function fireVolley() {
+    const target = nearestEnemy();
+    if (!target) return;
+    const baseAngle = Math.atan2(target.y - player.y, target.x - player.x);
+    const count = player.multishot;
+    const spread = Math.min(0.5, 0.12 * (count - 1));
+    for (let i = 0; i < count; i++) {
+      const off = count === 1 ? 0 : -spread + (spread * 2 * i) / (count - 1);
+      const angle = baseAngle + off;
+      projectiles.push({
+        x: player.x, y: player.y,
+        vx: Math.cos(angle) * PROJECTILE_SPEED,
+        vy: Math.sin(angle) * PROJECTILE_SPEED,
+        life: 1.1,
+        damage: player.damage,
+      });
+    }
+  }
+
+  function updateEnemies(dt) {
+    for (const e of enemies) {
+      const dx = player.x - e.x, dy = player.y - e.y;
+      const d = Math.sqrt(dx * dx + dy * dy) || 1;
+      e.x += (dx / d) * e.speed * dt;
+      e.y += (dy / d) * e.speed * dt;
+
+      const rr = (e.r + PLAYER_RADIUS) * (e.r + PLAYER_RADIUS);
+      if (dist2(player.x, player.y, e.x, e.y) < rr && performance.now() > player.invulnUntil) {
+        player.hp -= e.dmg;
+        player.invulnUntil = performance.now() + 550;
+        spawnParticles(player.x, player.y, '#ff6f59', 8);
+        if (player.hp <= 0) {
+          player.hp = 0;
+          endRun();
+        }
+      }
+    }
+  }
+
+  function updateProjectiles(dt) {
+    for (let i = projectiles.length - 1; i >= 0; i--) {
+      const p = projectiles[i];
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.life -= dt;
+      if (p.life <= 0) { projectiles.splice(i, 1); continue; }
+
+      let hit = false;
+      for (let j = enemies.length - 1; j >= 0; j--) {
+        const e = enemies[j];
+        if (dist2(p.x, p.y, e.x, e.y) < (e.r + 4) * (e.r + 4)) {
+          e.hp -= p.damage;
+          hit = true;
+          spawnParticles(e.x, e.y, e.color, 4);
+          if (e.hp <= 0) {
+            orbs.push({ x: e.x, y: e.y, value: e.xp, r: 5 });
+            enemies.splice(j, 1);
+          }
+          break;
+        }
+      }
+      if (hit) projectiles.splice(i, 1);
+    }
+  }
+
+  function updateOrbs(dt) {
+    for (let i = orbs.length - 1; i >= 0; i--) {
+      const o = orbs[i];
+      const d2 = dist2(player.x, player.y, o.x, o.y);
+      if (d2 < player.pickupRadius * player.pickupRadius) {
+        const d = Math.sqrt(d2) || 1;
+        const dx = (player.x - o.x) / d, dy = (player.y - o.y) / d;
+        o.x += dx * 380 * dt;
+        o.y += dy * 380 * dt;
+      }
+      if (d2 < 20 * 20) {
+        xp += o.value;
+        orbs.splice(i, 1);
+        checkLevelUp();
+      }
+    }
+  }
+
+  function checkLevelUp() {
+    if (xp >= xpToNext) {
+      xp -= xpToNext;
+      level += 1;
+      xpToNext = Math.round(6 + level * 4.5);
+      showLevelUp();
+    }
+  }
+
+  const UPGRADE_POOL = [
+    { name: 'Fire Rate', desc: 'Attack faster', apply: () => { player.fireInterval = Math.max(0.16, player.fireInterval * 0.85); } },
+    { name: 'Damage', desc: '+1 damage per hit', apply: () => { player.damage += 1; } },
+    { name: 'Move Speed', desc: '+10% move speed', apply: () => { player.speed *= 1.1; } },
+    { name: 'Max HP', desc: '+20 max HP, full heal', apply: () => { player.maxHp += 20; player.hp = player.maxHp; } },
+    { name: 'Multishot', desc: '+1 projectile', apply: () => { player.multishot += 1; } },
+    { name: 'Pickup Radius', desc: '+25% pickup range', apply: () => { player.pickupRadius *= 1.25; } },
+  ];
+
+  function showLevelUp() {
+    running = false;
+    const pool = [...UPGRADE_POOL];
+    const picks = [];
+    for (let i = 0; i < 3 && pool.length; i++) {
+      const idx = Math.floor(rand(0, pool.length));
+      picks.push(pool.splice(idx, 1)[0]);
+    }
+    upgradeCardsEl.innerHTML = '';
+    picks.forEach(u => {
+      const card = document.createElement('div');
+      card.className = 'upgrade-card';
+      card.innerHTML = '<div class="name">' + u.name + '</div><div class="desc">' + u.desc + '</div>';
+      card.addEventListener('click', () => {
+        u.apply();
+        levelup.classList.remove('show');
+        running = true;
+        lastTime = performance.now();
+        requestAnimationFrame(loop);
+      });
+      upgradeCardsEl.appendChild(card);
+    });
+    levelup.classList.add('show');
+  }
+
+  function spawnParticles(x, y, color, count) {
+    for (let i = 0; i < count; i++) {
+      particles.push({
+        x, y,
+        vx: rand(-90, 90), vy: rand(-90, 90),
+        life: rand(0.2, 0.4),
+        maxLife: 0.4,
+        color,
+      });
+    }
+  }
+  function updateParticles(dt) {
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx * dt; p.y += p.vy * dt;
+      p.life -= dt;
+      if (p.life <= 0) particles.splice(i, 1);
+    }
+  }
+
+  function fmtTime(s) {
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return (m < 10 ? '0' : '') + m + ':' + (sec < 10 ? '0' : '') + sec;
+  }
+
+  // ---------- Render ----------
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    ctx.save();
+    ctx.translate(W / 2 - player.x, H / 2 - player.y);
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    ctx.lineWidth = 1;
+    const gridSize = 60;
+    const startX = Math.floor((player.x - W / 2) / gridSize) * gridSize;
+    const startY = Math.floor((player.y - H / 2) / gridSize) * gridSize;
+    for (let x = startX; x < player.x + W / 2 + gridSize; x += gridSize) {
+      ctx.beginPath(); ctx.moveTo(x, player.y - H / 2); ctx.lineTo(x, player.y + H / 2 + gridSize); ctx.stroke();
+    }
+    for (let y = startY; y < player.y + H / 2 + gridSize; y += gridSize) {
+      ctx.beginPath(); ctx.moveTo(player.x - W / 2, y); ctx.lineTo(player.x + W / 2 + gridSize, y); ctx.stroke();
+    }
+
+    for (const o of orbs) {
+      ctx.beginPath();
+      ctx.arc(o.x, o.y, o.r, 0, Math.PI * 2);
+      ctx.fillStyle = '#6ee7ff';
+      ctx.shadowColor = '#6ee7ff';
+      ctx.shadowBlur = 8;
+      ctx.fill();
+    }
+    ctx.shadowBlur = 0;
+
+    for (const p of particles) {
+      ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    for (const e of enemies) {
+      ctx.beginPath();
+      ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2);
+      ctx.fillStyle = e.color;
+      ctx.shadowColor = e.glow;
+      ctx.shadowBlur = 10;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      if (e.hp < e.maxHp) {
+        const w = e.r * 2;
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.fillRect(e.x - w / 2, e.y - e.r - 8, w, 3);
+        ctx.fillStyle = '#ff6f59';
+        ctx.fillRect(e.x - w / 2, e.y - e.r - 8, w * Math.max(0, e.hp / e.maxHp), 3);
+      }
+    }
+
+    for (const p of projectiles) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2);
+      ctx.fillStyle = '#f2b134';
+      ctx.shadowColor = '#f2b134';
+      ctx.shadowBlur = 8;
+      ctx.fill();
+    }
+    ctx.shadowBlur = 0;
+
+    const flashing = performance.now() < player.invulnUntil && Math.floor(performance.now() / 90) % 2 === 0;
+    ctx.globalAlpha = flashing ? 0.4 : 1;
+    ctx.beginPath();
+    ctx.arc(player.x, player.y, PLAYER_RADIUS, 0, Math.PI * 2);
+    ctx.fillStyle = '#f4eefd';
+    ctx.shadowColor = '#6ee7ff';
+    ctx.shadowBlur = 14;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+
+    ctx.restore();
+  }
+
+  function updateHud() {
+    hudTimer.textContent = fmtTime(elapsed);
+    hudLevel.textContent = 'Lv ' + level;
+    hpFill.style.width = Math.max(0, (player.hp / player.maxHp) * 100) + '%';
+    xpFill.style.width = Math.max(0, (xp / xpToNext) * 100) + '%';
+  }
+
+  // ---------- Loop ----------
+  function loop(ts) {
+    if (!running) return;
+    const dt = Math.min((ts - lastTime) / 1000, 0.05) || 0;
+    lastTime = ts;
+    elapsed += dt;
+
+    updatePlayer(dt);
+    updateEnemies(dt);
+    updateProjectiles(dt);
+    updateOrbs(dt);
+    updateParticles(dt);
+
+    spawnTimer -= dt;
+    if (spawnTimer <= 0) { spawnEnemy(); spawnTimer = spawnInterval(); }
+
+    nextFireIn -= dt;
+    if (nextFireIn <= 0) { fireVolley(); nextFireIn = player.fireInterval; }
+
+    updateHud();
+    draw();
+
+    if (running) requestAnimationFrame(loop);
+  }
+
+  function endRun() {
+    running = false;
+    overlayTitle.textContent = 'You Fell';
+    overlaySub.textContent = 'Survived ' + fmtTime(elapsed) + ' · Reached level ' + level;
+    overlay.classList.add('show');
+  }
+
+  function startGame() {
+    resize();
+    resetWorld();
+    overlay.classList.remove('show');
+    levelup.classList.remove('show');
+    startScreen.style.display = 'none';
+    running = true;
+    lastTime = performance.now();
+    requestAnimationFrame(loop);
+  }
+
+  startBtn.addEventListener('click', startGame);
+  retryBtn.addEventListener('click', startGame);
+
+  resize();
+})();
+</script>
+</body>
+</html>
