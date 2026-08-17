@@ -51,6 +51,19 @@
   #hud .label { color: var(--ink-dim); }
   #hud .val { color: var(--gold); font-weight: 700; }
 
+  #sound-toggle {
+    position: absolute; top: 8px; right: 8px;
+    width: 28px; height: 28px; padding: 0;
+    background: rgba(21, 15, 34, 0.6); border: 1px solid rgba(244,238,253,0.15);
+    border-radius: 6px; color: var(--ink); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 6;
+  }
+  #sound-toggle svg { width: 16px; height: 16px; display: block; }
+  #sound-toggle .mute-x { opacity: 0; }
+  #sound-toggle.muted .wave { opacity: 0; }
+  #sound-toggle.muted .mute-x { opacity: 1; }
+
   #hint {
     position: absolute;
     bottom: 14px;
@@ -148,6 +161,15 @@
   </div>
   <div id="hint">Move your mouse / finger to steer &middot; eat smaller blobs, avoid bigger ones</div>
 
+  <button id="sound-toggle" aria-label="Toggle sound" title="Toggle sound">
+    <svg viewBox="0 0 24 24">
+      <path d="M3 9v6h4l5 5V4L7 9H3z" fill="currentColor"/>
+      <path class="wave" d="M16 8a5 5 0 0 1 0 8" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path class="wave" d="M18.5 5.5a9 9 0 0 1 0 13" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.6"/>
+      <path class="mute-x" d="M16 9l5 6M21 9l-5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+  </button>
+
   <div id="overlay">
     <h2 id="overlay-title">Eaten!</h2>
     <p id="overlay-sub">A bigger blob got you.</p>
@@ -174,6 +196,64 @@
   const retryBtn = document.getElementById('retry-btn');
   const startScreen = document.getElementById('start-screen');
   const startBtn = document.getElementById('start-btn');
+  const soundToggle = document.getElementById('sound-toggle');
+
+  // ---------- Audio (synthesized, no external files) ----------
+  let audioCtx = null;
+  let soundOn = true;
+  try {
+    soundOn = localStorage.getItem('neonblob_sound') !== 'off';
+  } catch (e) { /* ignore */ }
+  if (!soundOn) soundToggle.classList.add('muted');
+
+  function getAudioCtx() {
+    if (!audioCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) audioCtx = new AC();
+    }
+    return audioCtx;
+  }
+
+  function tone(freq, duration, waveType, peakGain, delay) {
+    if (!soundOn) return;
+    const ac = getAudioCtx();
+    if (!ac) return;
+    if (ac.state === 'suspended') ac.resume();
+    const t0 = ac.currentTime + (delay || 0);
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    osc.type = waveType || 'sine';
+    osc.frequency.setValueAtTime(freq, t0);
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.exponentialRampToValueAtTime(peakGain, t0 + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+    osc.connect(gain);
+    gain.connect(ac.destination);
+    osc.start(t0);
+    osc.stop(t0 + duration + 0.02);
+  }
+
+  function sfxPellet() { tone(700, 0.05, 'sine', 0.08); }
+  function sfxAbsorb(size) {
+    const n = Math.min(Math.floor(size / 40), 8);
+    tone(200 + n * 15, 0.18, 'sawtooth', 0.14);
+    tone(400 + n * 20, 0.12, 'sine', 0.08, 0.05);
+  }
+  function sfxGameOver() {
+    tone(320, 0.22, 'sawtooth', 0.14, 0);
+    tone(240, 0.26, 'sawtooth', 0.14, 0.16);
+    tone(160, 0.35, 'sawtooth', 0.14, 0.32);
+  }
+
+  soundToggle.addEventListener('click', () => {
+    soundOn = !soundOn;
+    soundToggle.classList.toggle('muted', !soundOn);
+    try { localStorage.setItem('neonblob_sound', soundOn ? 'on' : 'off'); } catch (e) { /* ignore */ }
+    if (soundOn) {
+      const ac = getAudioCtx();
+      if (ac && ac.state === 'suspended') ac.resume();
+    }
+  });
 
   let W, H, DPR;
   function resize() {
@@ -333,6 +413,7 @@
         pellets.splice(i, 1);
         b.mass += PELLET_MASS;
         pellets.push(makePellet());
+        if (b.isPlayer) sfxPellet();
       }
     }
   }
@@ -346,6 +427,7 @@
       if (d > rp + rb) continue;
 
       if (player.mass > b.mass * EAT_RATIO && d < rp) {
+        sfxAbsorb(b.mass);
         player.mass += b.mass * GROWTH_KEEP;
         const difficulty = 1 + elapsed / 60;
         blobs[i] = makeBlob(rollAiMass(difficulty), i);
@@ -454,6 +536,7 @@
     overlayTitle.textContent = 'Eaten!';
     overlaySub.textContent = 'A bigger blob got you. Final size: ' + Math.floor(player.mass);
     overlay.classList.add('show');
+    sfxGameOver();
   }
 
   function startGame() {

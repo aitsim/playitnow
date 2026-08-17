@@ -11,12 +11,18 @@ index.html                    Homepage — grid of game cards
 games/
   game-template.html          Blank template for adding a new game
   neon-slither.html           Neon Slither — Slither.io-style snake game
-  neon-blob.html               Neon Blob — Agar.io-style eat & grow game
-  neon-onslaught.html          Neon Onslaught — Vampire Survivors-style bullet heaven
+  neon-blob.html              Neon Blob — Agar.io-style eat & grow game
+  neon-onslaught.html         Neon Onslaught — Vampire Survivors-style bullet heaven
+  neon-pop.html                Neon Pop — bubble shooter puzzle game
+  neon-stack.html               Neon Stack — one-tap Stack Tower game
+  neon-dino.html                 Neon Dino — Dino-style endless runner
   embed/
     slither-clone.html        Neon Slither's actual game code (self-contained)
-    blob-eat.html               Neon Blob's actual game code (self-contained)
-    bullet-heaven.html          Neon Onslaught's actual game code (self-contained)
+    blob-eat.html              Neon Blob's actual game code (self-contained)
+    bullet-heaven.html         Neon Onslaught's actual game code (self-contained)
+    bubble-pop.html             Neon Pop's actual game code (self-contained)
+    stack-tower.html             Neon Stack's actual game code (self-contained)
+    dino-runner.html              Neon Dino's actual game code (self-contained)
 contact.html                  Contact page — mailto + Formspree form
 privacy.html                  Privacy policy
 terms.html                     Terms of use
@@ -28,12 +34,14 @@ css/style.css                  All styling (arcade marquee theme)
 js/main.js                     Auto-fills footer year
 ```
 
-## The three games (all built in, all real)
+## The six games (all built in, all real)
 
 Each game is a self-contained, dependency-free HTML/CSS/JS file in
 `games/embed/`, embedded via iframe in its own page under `games/`. No
 external libraries or CDN calls — they work standalone once deployed.
 Open any of them directly in a browser to test locally before pushing.
+Every game has synthesized sound effects (Web Audio API, no audio files)
+and a mute toggle that remembers your preference via `localStorage`.
 
 - **Neon Slither** (`games/neon-slither.html`) — mouse/touch to steer, eat
   orbs to grow, avoid trails, dodge AI rivals.
@@ -41,11 +49,18 @@ Open any of them directly in a browser to test locally before pushing.
   smaller blobs and pellets to grow, avoid bigger ones.
 - **Neon Onslaught** (`games/neon-onslaught.html`) — mouse/touch to dodge,
   auto-fires at enemies, level up and pick upgrades to survive longer.
+- **Neon Pop** (`games/neon-pop.html`) — aim and shoot to match 3+ colored
+  bubbles, clear the board before it fills up.
+- **Neon Stack** (`games/neon-stack.html`) — one-tap timing game, drop
+  blocks with precision to build the tallest tower you can.
+- **Neon Dino** (`games/neon-dino.html`) — one-button endless runner, jump
+  over obstacles and run as far as possible before you crash.
 
 ## Adding a new game
 
 1. Copy `games/game-template.html` to `games/your-game-slug.html` — use a
-   descriptive slug (e.g. `neon-something.html`), not `game-4.html`.
+   descriptive slug matching the `neon-*` naming pattern (e.g.
+   `neon-something.html`), not `game-4.html`.
 2. Build the game itself as a self-contained file in `games/embed/`, then
    point the new page's iframe `src` at it.
 3. Update the new page's `<title>`, meta description, `[Game Name]` text,
@@ -53,11 +68,17 @@ Open any of them directly in a browser to test locally before pushing.
 4. Add a matching logo/icon pair in `assets/` (see the existing
    `neon-*-icon.svg` / `neon-*-logo.svg` files for the visual pattern).
 5. Add a `<a class="game-card">` block in `index.html`'s game grid pointing
-   at the new page.
+   at the new page, and a link in the "Explore by category" section.
 6. Add the new page's URL to `sitemap.xml`.
+7. Once you have real gameplay screenshots, drop them in
+   `assets/screenshots/` and wire them into the page's screenshot gallery
+   — landscape games (full-canvas) use plain `<img>`, portrait/letterboxed
+   games (like Pop and Stack) use `<img class="tall">` to cap the display
+   height without cropping.
 
-To remove a game: delete its card from `index.html`, its file in `games/`,
-its embed file in `games/embed/`, and its entry in `sitemap.xml`.
+To remove a game: delete its card from `index.html` (both the grid and the
+category list), its wrapper file in `games/`, its embed file in
+`games/embed/`, and its entry in `sitemap.xml`.
 
 ## Push to GitHub
 
@@ -108,5 +129,3 @@ Once one game is clearly winning on traffic/engagement:
    as above, on a **new** Pages project (or repoint this one — your call,
    since you already have traffic data on `playitnow.io` worth preserving
    separately if you want to keep testing new games there)
-# playitnow
-# playitnow

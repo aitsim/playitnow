@@ -330,6 +330,15 @@ footer {
   object-fit: cover;
 }
 
+.screenshot-gallery img.tall {
+  aspect-ratio: auto;
+  width: auto;
+  max-width: 100%;
+  height: 280px;
+  object-fit: contain;
+  margin: 0 auto;
+}
+
 .screenshot-gallery figcaption {
   padding: 0.6rem 0.8rem;
   font-size: 0.8rem;

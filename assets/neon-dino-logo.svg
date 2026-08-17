@@ -1,0 +1,46 @@
+<svg viewBox="0 0 560 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Neon Dino logo">
+  <defs>
+    <linearGradient id="dinoGradL" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f4eefd"/>
+      <stop offset="100%" stop-color="#c9c2e0"/>
+    </linearGradient>
+    <linearGradient id="textGradD" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ff6f59"/>
+      <stop offset="55%" stop-color="#f2b134"/>
+      <stop offset="100%" stop-color="#f2b134"/>
+    </linearGradient>
+    <filter id="glowDL" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="4.5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="glowSoftD" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="2.2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- dino mark -->
+  <g filter="url(#glowDL)" fill="url(#dinoGradL)">
+    <path d="M58,58 Q32,52 16,60 Q13,67 21,71 Q36,78 58,82 Z"/>
+    <rect x="52" y="50" width="48" height="48" rx="16"/>
+    <rect x="64" y="18" width="42" height="34" rx="10"/>
+    <rect x="96" y="34" width="22" height="16" rx="6"/>
+    <rect x="92" y="66" width="16" height="10" rx="5"/>
+    <rect x="58" y="94" width="14" height="28" rx="6"/>
+    <rect x="80" y="94" width="14" height="28" rx="6"/>
+  </g>
+  <circle cx="90" cy="28" r="3.5" fill="#150f22"/>
+  <circle cx="122" cy="98" r="4" fill="#6ee7ff" filter="url(#glowSoftD)"/>
+
+  <!-- wordmark -->
+  <text x="128" y="78" font-family="'Press Start 2P','Courier New',monospace"
+        font-size="30" fill="url(#textGradD)" filter="url(#glowSoftD)">NEON</text>
+  <text x="128" y="112" font-family="'Press Start 2P','Courier New',monospace"
+        font-size="30" fill="#f4eefd">DINO</text>
+</svg>

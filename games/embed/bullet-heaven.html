@@ -70,6 +70,19 @@
   #hud .timer { font-weight: 700; color: var(--gold); }
   #hud .level { font-weight: 700; color: var(--cyan); }
 
+  #sound-toggle {
+    position: absolute; top: 8px; right: 8px;
+    width: 28px; height: 28px; padding: 0;
+    background: rgba(21, 15, 34, 0.6); border: 1px solid rgba(244,238,253,0.15);
+    border-radius: 6px; color: var(--ink); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 6;
+  }
+  #sound-toggle svg { width: 16px; height: 16px; display: block; }
+  #sound-toggle .mute-x { opacity: 0; }
+  #sound-toggle.muted .wave { opacity: 0; }
+  #sound-toggle.muted .mute-x { opacity: 1; }
+
   #hint {
     position: absolute;
     bottom: 14px;
@@ -192,6 +205,15 @@
   </div>
   <div id="hint">Move mouse / drag finger to move &middot; you auto-fire at nearby enemies</div>
 
+  <button id="sound-toggle" aria-label="Toggle sound" title="Toggle sound">
+    <svg viewBox="0 0 24 24">
+      <path d="M3 9v6h4l5 5V4L7 9H3z" fill="currentColor"/>
+      <path class="wave" d="M16 8a5 5 0 0 1 0 8" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path class="wave" d="M18.5 5.5a9 9 0 0 1 0 13" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.6"/>
+      <path class="mute-x" d="M16 9l5 6M21 9l-5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+  </button>
+
   <div id="overlay">
     <h2 id="overlay-title">You Fell</h2>
     <p id="overlay-sub">Survived 0:00 &middot; Level 1</p>
@@ -227,6 +249,68 @@
   const upgradeCardsEl = document.getElementById('upgrade-cards');
   const startScreen = document.getElementById('start-screen');
   const startBtn = document.getElementById('start-btn');
+  const soundToggle = document.getElementById('sound-toggle');
+
+  // ---------- Audio (synthesized, no external files) ----------
+  let audioCtx = null;
+  let soundOn = true;
+  try {
+    soundOn = localStorage.getItem('neononslaught_sound') !== 'off';
+  } catch (e) { /* ignore */ }
+  if (!soundOn) soundToggle.classList.add('muted');
+
+  function getAudioCtx() {
+    if (!audioCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) audioCtx = new AC();
+    }
+    return audioCtx;
+  }
+
+  function tone(freq, duration, waveType, peakGain, delay) {
+    if (!soundOn) return;
+    const ac = getAudioCtx();
+    if (!ac) return;
+    if (ac.state === 'suspended') ac.resume();
+    const t0 = ac.currentTime + (delay || 0);
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    osc.type = waveType || 'sine';
+    osc.frequency.setValueAtTime(freq, t0);
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.exponentialRampToValueAtTime(peakGain, t0 + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+    osc.connect(gain);
+    gain.connect(ac.destination);
+    osc.start(t0);
+    osc.stop(t0 + duration + 0.02);
+  }
+
+  function sfxShoot() { tone(720, 0.045, 'square', 0.045); }
+  function sfxHit() { tone(280, 0.04, 'square', 0.04); }
+  function sfxKill() { tone(180, 0.1, 'sawtooth', 0.09); }
+  function sfxHurt() { tone(120, 0.15, 'sawtooth', 0.1); }
+  function sfxLevelUp() {
+    tone(520, 0.1, 'sine', 0.14, 0);
+    tone(660, 0.1, 'sine', 0.14, 0.09);
+    tone(880, 0.16, 'sine', 0.14, 0.18);
+  }
+  function sfxUpgradePick() { tone(500, 0.08, 'triangle', 0.12); }
+  function sfxGameOver() {
+    tone(320, 0.22, 'sawtooth', 0.14, 0);
+    tone(240, 0.26, 'sawtooth', 0.14, 0.16);
+    tone(160, 0.35, 'sawtooth', 0.14, 0.32);
+  }
+
+  soundToggle.addEventListener('click', () => {
+    soundOn = !soundOn;
+    soundToggle.classList.toggle('muted', !soundOn);
+    try { localStorage.setItem('neononslaught_sound', soundOn ? 'on' : 'off'); } catch (e) { /* ignore */ }
+    if (soundOn) {
+      const ac = getAudioCtx();
+      if (ac && ac.state === 'suspended') ac.resume();
+    }
+  });
 
   let W, H, DPR;
   function resize() {
@@ -375,6 +459,7 @@
         damage: player.damage,
       });
     }
+    sfxShoot();
   }
 
   function updateEnemies(dt) {
@@ -389,6 +474,7 @@
         player.hp -= e.dmg;
         player.invulnUntil = performance.now() + 550;
         spawnParticles(player.x, player.y, '#ff6f59', 8);
+        sfxHurt();
         if (player.hp <= 0) {
           player.hp = 0;
           endRun();
@@ -415,6 +501,9 @@
           if (e.hp <= 0) {
             orbs.push({ x: e.x, y: e.y, value: e.xp, r: 5 });
             enemies.splice(j, 1);
+            sfxKill();
+          } else {
+            sfxHit();
           }
           break;
         }
@@ -461,6 +550,7 @@
 
   function showLevelUp() {
     running = false;
+    sfxLevelUp();
     const pool = [...UPGRADE_POOL];
     const picks = [];
     for (let i = 0; i < 3 && pool.length; i++) {
@@ -474,6 +564,7 @@
       card.innerHTML = '<div class="name">' + u.name + '</div><div class="desc">' + u.desc + '</div>';
       card.addEventListener('click', () => {
         u.apply();
+        sfxUpgradePick();
         levelup.classList.remove('show');
         running = true;
         lastTime = performance.now();
@@ -625,6 +716,7 @@
     overlayTitle.textContent = 'You Fell';
     overlaySub.textContent = 'Survived ' + fmtTime(elapsed) + ' · Reached level ' + level;
     overlay.classList.add('show');
+    sfxGameOver();
   }
 
   function startGame() {

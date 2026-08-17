@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Neon Pop</title>
+<style>
+  :root {
+    --bg: #0d0a1a;
+    --ink: #f4eefd;
+    --ink-dim: #9c8fc2;
+    --gold: #f2b134;
+    --coral: #ff6f59;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; width: 100%; height: 100%;
+    background: var(--bg); overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    -webkit-user-select: none; user-select: none; touch-action: none;
+  }
+  #game-wrap {
+    position: relative; width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  canvas {
+    display: block;
+    background: radial-gradient(circle at 50% 0%, #1c1533, #0d0a1a 70%);
+    cursor: crosshair;
+    touch-action: none;
+  }
+  #hud {
+    position: absolute; top: 12px; left: 12px;
+    color: var(--ink); font-size: 13px; line-height: 1.7;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.6); pointer-events: none;
+  }
+  #hud .label { color: var(--ink-dim); }
+  #hud .val { color: var(--gold); font-weight: 700; }
+  #hud-best { position: absolute; top: 12px; right: 44px; text-align: right; }
+
+  #sound-toggle {
+    position: absolute; top: 8px; right: 8px;
+    width: 28px; height: 28px; padding: 0;
+    background: rgba(21, 15, 34, 0.6); border: 1px solid rgba(244,238,253,0.15);
+    border-radius: 6px; color: var(--ink); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 6;
+  }
+  #sound-toggle svg { width: 16px; height: 16px; display: block; }
+  #sound-toggle .mute-x { opacity: 0; }
+  #sound-toggle.muted .wave { opacity: 0; }
+  #sound-toggle.muted .mute-x { opacity: 1; }
+
+  #overlay, #start-screen {
+    position: absolute; inset: 0; display: none;
+    align-items: center; justify-content: center; flex-direction: column;
+    background: rgba(13, 10, 26, 0.9); color: var(--ink);
+    text-align: center; padding: 1.5rem; z-index: 5;
+  }
+  #overlay.show, #start-screen.show { display: flex; }
+  #overlay h2 { font-size: 1.6rem; margin: 0 0 0.3rem; color: var(--coral); }
+  #overlay p, #start-screen p { color: var(--ink-dim); margin: 0 0 1.4rem; font-size: 0.95rem; max-width: 340px; }
+  #start-screen h1 {
+    font-size: 1.7rem; margin: 0 0 0.4rem;
+    background: linear-gradient(90deg, var(--gold), var(--coral));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  #overlay button, #start-screen button {
+    font-size: 1rem; font-weight: 700; color: #1a1226;
+    background: var(--gold); border: none; border-radius: 8px;
+    padding: 0.8rem 1.8rem; cursor: pointer;
+  }
+  #overlay button:hover, #start-screen button:hover { background: var(--coral); }
+</style>
+</head>
+<body>
+<div id="game-wrap">
+  <canvas id="game"></canvas>
+
+  <div id="hud">
+    <div><span class="label">Score</span> <span class="val" id="hud-score">0</span></div>
+  </div>
+  <div id="hud-best">
+    <div><span class="label">Best</span> <span class="val" id="hud-best-val">0</span></div>
+  </div>
+
+  <button id="sound-toggle" aria-label="Toggle sound" title="Toggle sound">
+    <svg viewBox="0 0 24 24">
+      <path d="M3 9v6h4l5 5V4L7 9H3z" fill="currentColor"/>
+      <path class="wave" d="M16 8a5 5 0 0 1 0 8" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path class="wave" d="M18.5 5.5a9 9 0 0 1 0 13" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.6"/>
+      <path class="mute-x" d="M16 9l5 6M21 9l-5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+  </button>
+
+  <div id="overlay">
+    <h2 id="overlay-title">Game Over</h2>
+    <p id="overlay-sub">The bubbles reached the bottom.</p>
+    <button id="retry-btn">Play Again</button>
+  </div>
+
+  <div id="start-screen" class="show">
+    <h1>NEON POP</h1>
+    <p>Aim with your mouse (or finger) and tap to shoot. Match 3 or more of the same color to pop them — clear the stack before it reaches the bottom.</p>
+    <button id="start-btn">Start</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const wrap = document.getElementById('game-wrap');
+  const hudScore = document.getElementById('hud-score');
+  const hudBest = document.getElementById('hud-best-val');
+  const overlay = document.getElementById('overlay');
+  const overlayTitle = document.getElementById('overlay-title');
+  const overlaySub = document.getElementById('overlay-sub');
+  const retryBtn = document.getElementById('retry-btn');
+  const startScreen = document.getElementById('start-screen');
+  const startBtn = document.getElementById('start-btn');
+  const soundToggle = document.getElementById('sound-toggle');
+
+  // ---------- Audio (synthesized, no external files) ----------
+  let audioCtx = null;
+  let soundOn = true;
+  try {
+    soundOn = localStorage.getItem('neonpop_sound') !== 'off';
+  } catch (e) { /* ignore */ }
+  if (!soundOn) soundToggle.classList.add('muted');
+
+  function getAudioCtx() {
+    if (!audioCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) audioCtx = new AC();
+    }
+    return audioCtx;
+  }
+
+  function tone(freq, duration, waveType, peakGain, delay) {
+    if (!soundOn) return;
+    const ac = getAudioCtx();
+    if (!ac) return;
+    if (ac.state === 'suspended') ac.resume();
+    const t0 = ac.currentTime + (delay || 0);
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    osc.type = waveType || 'sine';
+    osc.frequency.setValueAtTime(freq, t0);
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.exponentialRampToValueAtTime(peakGain, t0 + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+    osc.connect(gain);
+    gain.connect(ac.destination);
+    osc.start(t0);
+    osc.stop(t0 + duration + 0.02);
+  }
+
+  function sfxShoot() { tone(520, 0.09, 'triangle', 0.14); }
+  function sfxBounce() { tone(280, 0.05, 'square', 0.07); }
+  function sfxPop(groupSize) {
+    const n = Math.min(groupSize, 8);
+    tone(480 + n * 40, 0.14, 'sine', 0.2);
+    tone(720 + n * 40, 0.1, 'sine', 0.1, 0.03);
+  }
+  function sfxDrop() { tone(640, 0.16, 'sine', 0.12); }
+  function sfxNewRow() { tone(160, 0.14, 'square', 0.08); }
+  function sfxGameOver() {
+    tone(320, 0.22, 'sawtooth', 0.14, 0);
+    tone(240, 0.26, 'sawtooth', 0.14, 0.16);
+    tone(160, 0.35, 'sawtooth', 0.14, 0.32);
+  }
+
+  soundToggle.addEventListener('click', () => {
+    soundOn = !soundOn;
+    soundToggle.classList.toggle('muted', !soundOn);
+    try { localStorage.setItem('neonpop_sound', soundOn ? 'on' : 'off'); } catch (e) { /* ignore */ }
+    if (soundOn) {
+      const ac = getAudioCtx();
+      if (ac && ac.state === 'suspended') ac.resume();
+    }
+  });
+
+  // ---------- Logical resolution (letterboxed to fit container) ----------
+  const LW = 480, LH = 720;
+  const R = 20;
+  const COLS = 11;
+  const ROW_H = R * 1.72;
+  const TOP_MARGIN = 44;
+  const GRID_W = COLS * R * 2;
+  const LEFT_MARGIN = (LW - GRID_W) / 2;
+  const ROWS_MAX = 18;
+  const DANGER_Y = LH - 130;
+  const SHOOTER = { x: LW / 2, y: LH - 46 };
+  const SPEED = 620;
+
+  const COLORS = [
+    { fill: '#f2b134', glow: 'rgba(242,177,52,0.65)' },
+    { fill: '#ff6f59', glow: 'rgba(255,111,89,0.65)' },
+    { fill: '#6ee7ff', glow: 'rgba(110,231,255,0.65)' },
+    { fill: '#9d7bff', glow: 'rgba(157,123,255,0.65)' },
+    { fill: '#7dffb3', glow: 'rgba(125,255,179,0.65)' },
+  ];
+
+  let DPR = 1;
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    const containerW = wrap.clientWidth;
+    const containerH = wrap.clientHeight;
+    const scale = Math.min(containerW / LW, containerH / LH);
+    const cssW = LW * scale;
+    const cssH = LH * scale;
+    canvas.style.width = cssW + 'px';
+    canvas.style.height = cssH + 'px';
+    canvas.width = LW * DPR;
+    canvas.height = LH * DPR;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+  window.addEventListener('resize', resize);
+
+  // ---------- Grid ----------
+  let grid = Array.from({ length: ROWS_MAX }, () => new Array(COLS).fill(null));
+  let score = 0;
+  let best = 0;
+  let shots = 0;
+  let running = false;
+  let lastTime = 0;
+  let gameOver = false;
+
+  let projectile = null; // {x,y,vx,vy,color}
+  let currentColor = 0, nextColor = 0;
+  let aimAngle = -Math.PI / 2;
+  let poppingAnim = []; // {x,y,color,life}
+
+  try {
+    const savedBest = localStorage.getItem('neonpop_best');
+    if (savedBest) best = parseInt(savedBest, 10) || 0;
+  } catch (e) { /* localStorage unavailable, ignore */ }
+  hudBest.textContent = best;
+
+  function colsInRow(r) { return (r % 2 === 0) ? COLS : COLS - 1; }
+
+  function cellPos(r, c) {
+    const offsetX = (r % 2 === 1) ? R : 0;
+    return {
+      x: LEFT_MARGIN + c * R * 2 + R + offsetX,
+      y: TOP_MARGIN + r * ROW_H + R,
+    };
+  }
+
+  function neighborsOf(r, c) {
+    const even = (r % 2 === 0);
+    const offs = even
+      ? [[-1,-1],[-1,0],[0,-1],[0,1],[1,-1],[1,0]]
+      : [[-1,0],[-1,1],[0,-1],[0,1],[1,0],[1,1]];
+    return offs.map(([dr, dc]) => [r + dr, c + dc])
+      .filter(([rr, cc]) => rr >= 0 && rr < ROWS_MAX && cc >= 0 && cc < colsInRow(rr));
+  }
+
+  function randomColorIdx(limit) {
+    return Math.floor(Math.random() * limit);
+  }
+
+  function makeGrid() {
+    grid = [];
+    for (let r = 0; r < ROWS_MAX; r++) grid.push(new Array(COLS).fill(null));
+    const initialRows = 5;
+    const paletteLimit = 4; // fewer colors early = easier
+    for (let r = 0; r < initialRows; r++) {
+      for (let c = 0; c < colsInRow(r); c++) {
+        grid[r][c] = randomColorIdx(paletteLimit);
+      }
+    }
+  }
+
+  function resetGame() {
+    makeGrid();
+    score = 0;
+    shots = 0;
+    gameOver = false;
+    projectile = null;
+    currentColor = randomColorIdx(COLORS.length);
+    nextColor = randomColorIdx(COLORS.length);
+    hudScore.textContent = '0';
+  }
+
+  // ---------- Input ----------
+  function pointerToLogical(clientX, clientY) {
+    const rect = canvas.getBoundingClientRect();
+    const relX = (clientX - rect.left) / rect.width;
+    const relY = (clientY - rect.top) / rect.height;
+    return { x: relX * LW, y: relY * LH };
+  }
+
+  function updateAim(clientX, clientY) {
+    const p = pointerToLogical(clientX, clientY);
+    let dx = p.x - SHOOTER.x;
+    let dy = p.y - SHOOTER.y;
+    if (dy > -30) dy = -30;
+    let angle = Math.atan2(dy, dx);
+    const minA = -Math.PI + 0.16;
+    const maxA = -0.16;
+    if (angle > maxA) angle = maxA;
+    if (angle < minA) angle = minA;
+    aimAngle = angle;
+  }
+
+  function shoot() {
+    if (projectile || gameOver || !running) return;
+    projectile = {
+      x: SHOOTER.x, y: SHOOTER.y,
+      vx: Math.cos(aimAngle) * SPEED,
+      vy: Math.sin(aimAngle) * SPEED,
+      color: currentColor,
+    };
+    currentColor = nextColor;
+    nextColor = randomColorIdx(COLORS.length);
+    shots++;
+    sfxShoot();
+  }
+
+  canvas.addEventListener('mousemove', (e) => updateAim(e.clientX, e.clientY));
+  canvas.addEventListener('mousedown', (e) => { updateAim(e.clientX, e.clientY); shoot(); });
+  canvas.addEventListener('touchstart', (e) => {
+    const t = e.touches[0];
+    updateAim(t.clientX, t.clientY);
+    shoot();
+    e.preventDefault();
+  }, { passive: false });
+  canvas.addEventListener('touchmove', (e) => {
+    const t = e.touches[0];
+    updateAim(t.clientX, t.clientY);
+    e.preventDefault();
+  }, { passive: false });
+
+  // ---------- Physics / matching ----------
+  function findSnapCell(px, py) {
+    let best = null, bestD = Infinity;
+    for (let r = 0; r < ROWS_MAX; r++) {
+      const cCount = colsInRow(r);
+      for (let c = 0; c < cCount; c++) {
+        if (grid[r][c] !== null) continue;
+        const pos = cellPos(r, c);
+        const d = Math.hypot(pos.x - px, pos.y - py);
+        if (d > R * 3.2) continue;
+        if (r > 0) {
+          const hasFilledNeighbor = neighborsOf(r, c).some(([rr, cc]) => grid[rr][cc] !== null);
+          if (!hasFilledNeighbor) continue;
+        }
+        if (d < bestD) { bestD = d; best = { row: r, col: c }; }
+      }
+    }
+    return best;
+  }
+
+  function floodMatch(r, c, color) {
+    const seen = new Set();
+    const stack = [[r, c]];
+    const group = [];
+    while (stack.length) {
+      const [cr, cc] = stack.pop();
+      const key = cr + ',' + cc;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      if (grid[cr][cc] !== color) continue;
+      group.push([cr, cc]);
+      for (const [nr, nc] of neighborsOf(cr, cc)) {
+        if (!seen.has(nr + ',' + nc)) stack.push([nr, nc]);
+      }
+    }
+    return group;
+  }
+
+  function findFloating() {
+    const connected = new Set();
+    const stack = [];
+    for (let c = 0; c < colsInRow(0); c++) {
+      if (grid[0][c] !== null) { stack.push([0, c]); connected.add('0,' + c); }
+    }
+    while (stack.length) {
+      const [r, c] = stack.pop();
+      for (const [nr, nc] of neighborsOf(r, c)) {
+        const key = nr + ',' + nc;
+        if (grid[nr][nc] !== null && !connected.has(key)) {
+          connected.add(key);
+          stack.push([nr, nc]);
+        }
+      }
+    }
+    const floating = [];
+    for (let r = 0; r < ROWS_MAX; r++) {
+      for (let c = 0; c < colsInRow(r); c++) {
+        if (grid[r][c] !== null && !connected.has(r + ',' + c)) floating.push([r, c]);
+      }
+    }
+    return floating;
+  }
+
+  function addScore(n) {
+    score += n;
+    hudScore.textContent = score;
+    if (score > best) {
+      best = score;
+      hudBest.textContent = best;
+      try { localStorage.setItem('neonpop_best', String(best)); } catch (e) { /* ignore */ }
+    }
+  }
+
+  function settleProjectile() {
+    const cell = findSnapCell(projectile.x, projectile.y);
+    if (!cell) { projectile = null; return; }
+    grid[cell.row][cell.col] = projectile.color;
+    const pos = cellPos(cell.row, cell.col);
+
+    const group = floodMatch(cell.row, cell.col, projectile.color);
+    if (group.length >= 3) {
+      for (const [r, c] of group) {
+        const p = cellPos(r, c);
+        poppingAnim.push({ x: p.x, y: p.y, color: projectile.color, life: 1 });
+        grid[r][c] = null;
+      }
+      addScore(group.length * 10);
+      sfxPop(group.length);
+
+      const floating = findFloating();
+      for (const [r, c] of floating) {
+        const p = cellPos(r, c);
+        poppingAnim.push({ x: p.x, y: p.y, color: grid[r][c], life: 1, drop: true });
+        grid[r][c] = null;
+      }
+      if (floating.length) {
+        addScore(floating.length * 15);
+        sfxDrop();
+      }
+    }
+
+    projectile = null;
+
+    if (shots > 0 && shots % 7 === 0) pushNewRow();
+    checkGameOver();
+  }
+
+  function pushNewRow() {
+    for (let r = ROWS_MAX - 1; r > 0; r--) {
+      grid[r] = grid[r - 1].slice(0, colsInRow(r)).concat(
+        colsInRow(r) > colsInRow(r-1) ? [null] : []
+      ).slice(0, colsInRow(r));
+    }
+    const paletteLimit = Math.min(COLORS.length, 4);
+    grid[0] = [];
+    for (let c = 0; c < colsInRow(0); c++) grid[0][c] = randomColorIdx(paletteLimit);
+    sfxNewRow();
+    checkGameOver();
+  }
+
+  function checkGameOver() {
+    for (let r = 0; r < ROWS_MAX; r++) {
+      for (let c = 0; c < colsInRow(r); c++) {
+        if (grid[r][c] !== null) {
+          const pos = cellPos(r, c);
+          if (pos.y >= DANGER_Y) { triggerGameOver(); return; }
+        }
+      }
+    }
+  }
+
+  function triggerGameOver() {
+    if (gameOver) return;
+    gameOver = true;
+    running = false;
+    overlayTitle.textContent = 'Game Over';
+    overlaySub.textContent = 'Final score: ' + score + (score >= best ? ' — new best!' : '');
+    overlay.classList.add('show');
+    sfxGameOver();
+  }
+
+  // ---------- Update / Draw ----------
+  function update(dt) {
+    if (projectile) {
+      projectile.x += projectile.vx * dt;
+      projectile.y += projectile.vy * dt;
+      if (projectile.x <= R) { projectile.x = R; projectile.vx *= -1; sfxBounce(); }
+      if (projectile.x >= LW - R) { projectile.x = LW - R; projectile.vx *= -1; sfxBounce(); }
+      if (projectile.y <= TOP_MARGIN + R) {
+        projectile.y = TOP_MARGIN + R;
+        settleProjectile();
+      } else {
+        for (let r = 0; r < ROWS_MAX; r++) {
+          for (let c = 0; c < colsInRow(r); c++) {
+            if (grid[r][c] === null) continue;
+            const pos = cellPos(r, c);
+            if (Math.hypot(pos.x - projectile.x, pos.y - projectile.y) < R * 1.9) {
+              settleProjectile();
+              break;
+            }
+          }
+          if (!projectile) break;
+        }
+      }
+    }
+    for (let i = poppingAnim.length - 1; i >= 0; i--) {
+      poppingAnim[i].life -= dt * 2.6;
+      if (poppingAnim[i].drop) poppingAnim[i].y += dt * 500;
+      if (poppingAnim[i].life <= 0) poppingAnim.splice(i, 1);
+    }
+  }
+
+  function drawBubble(x, y, colorIdx, radius, alpha) {
+    const c = COLORS[colorIdx];
+    ctx.save();
+    if (alpha !== undefined) ctx.globalAlpha = alpha;
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.fillStyle = c.fill;
+    ctx.shadowColor = c.glow;
+    ctx.shadowBlur = 10;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x - radius * 0.3, y - radius * 0.3, radius * 0.3, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.shadowBlur = 0;
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, LW, LH);
+
+    // danger line
+    ctx.strokeStyle = 'rgba(255,111,89,0.35)';
+    ctx.setLineDash([6, 6]);
+    ctx.beginPath();
+    ctx.moveTo(0, DANGER_Y);
+    ctx.lineTo(LW, DANGER_Y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    for (let r = 0; r < ROWS_MAX; r++) {
+      for (let c = 0; c < colsInRow(r); c++) {
+        if (grid[r][c] === null) continue;
+        const pos = cellPos(r, c);
+        drawBubble(pos.x, pos.y, grid[r][c], R - 1.5);
+      }
+    }
+
+    for (const p of poppingAnim) {
+      drawBubble(p.x, p.y, p.color, (R - 1.5) * Math.max(p.life, 0), Math.max(p.life, 0));
+    }
+
+    // aim guide
+    if (!gameOver && running) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(244,238,253,0.35)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 7]);
+      ctx.beginPath();
+      ctx.moveTo(SHOOTER.x, SHOOTER.y);
+      ctx.lineTo(SHOOTER.x + Math.cos(aimAngle) * 140, SHOOTER.y + Math.sin(aimAngle) * 140);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+    }
+
+    // shooter base
+    ctx.beginPath();
+    ctx.arc(SHOOTER.x, SHOOTER.y, R + 6, 0, Math.PI * 2);
+    ctx.fillStyle = '#150f22';
+    ctx.strokeStyle = 'rgba(242,177,52,0.4)';
+    ctx.lineWidth = 2;
+    ctx.fill();
+    ctx.stroke();
+
+    if (!gameOver) {
+      drawBubble(SHOOTER.x, SHOOTER.y, currentColor, R - 1.5);
+    }
+
+    // next bubble preview
+    ctx.font = '11px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(244,238,253,0.5)';
+    ctx.textAlign = 'center';
+    ctx.fillText('NEXT', LW - 34, SHOOTER.y - R - 12);
+    drawBubble(LW - 34, SHOOTER.y, nextColor, R * 0.6);
+
+    if (projectile) {
+      drawBubble(projectile.x, projectile.y, projectile.color, R - 1.5);
+    }
+  }
+
+  function loop(ts) {
+    if (!running) return;
+    const dt = Math.min((ts - lastTime) / 1000, 0.05) || 0;
+    lastTime = ts;
+    update(dt);
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  function startGame() {
+    resize();
+    resetGame();
+    overlay.classList.remove('show');
+    startScreen.classList.remove('show');
+    running = true;
+    lastTime = performance.now();
+    requestAnimationFrame(loop);
+  }
+
+  startBtn.addEventListener('click', startGame);
+  retryBtn.addEventListener('click', startGame);
+
+  resize();
+  draw();
+})();
+</script>
+</body>
+</html>

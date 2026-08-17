@@ -1,0 +1,51 @@
+<svg viewBox="0 0 560 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Neon Pop logo">
+  <defs>
+    <radialGradient id="bubbleGoldL" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#fff2d8"/>
+      <stop offset="35%" stop-color="#f2b134"/>
+      <stop offset="100%" stop-color="#c9820f"/>
+    </radialGradient>
+    <radialGradient id="bubbleCoralL" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#ffe0d8"/>
+      <stop offset="35%" stop-color="#ff6f59"/>
+      <stop offset="100%" stop-color="#c53f2c"/>
+    </radialGradient>
+    <radialGradient id="bubbleCyanL" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#e3faff"/>
+      <stop offset="35%" stop-color="#6ee7ff"/>
+      <stop offset="100%" stop-color="#2ba7c4"/>
+    </radialGradient>
+    <linearGradient id="textGradP" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ff6f59"/>
+      <stop offset="55%" stop-color="#f2b134"/>
+      <stop offset="100%" stop-color="#f2b134"/>
+    </linearGradient>
+    <filter id="glowP4" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="4.5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="glowSoftP" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="2.2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- bubble cluster mark -->
+  <g filter="url(#glowP4)">
+    <circle cx="46" cy="62" r="24" fill="url(#bubbleGoldL)"/>
+    <circle cx="82" cy="72" r="19" fill="url(#bubbleCoralL)"/>
+    <circle cx="40" cy="100" r="15" fill="url(#bubbleCyanL)"/>
+  </g>
+
+  <!-- wordmark -->
+  <text x="128" y="78" font-family="'Press Start 2P','Courier New',monospace"
+        font-size="30" fill="url(#textGradP)" filter="url(#glowSoftP)">NEON</text>
+  <text x="128" y="112" font-family="'Press Start 2P','Courier New',monospace"
+        font-size="30" fill="#f4eefd">POP</text>
+</svg>

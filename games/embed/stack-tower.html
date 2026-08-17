@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Neon Stack</title>
+<style>
+  :root {
+    --bg: #0d0a1a;
+    --ink: #f4eefd;
+    --ink-dim: #9c8fc2;
+    --gold: #f2b134;
+    --coral: #ff6f59;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; width: 100%; height: 100%;
+    background: var(--bg); overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    -webkit-user-select: none; user-select: none; touch-action: none;
+  }
+  #game-wrap {
+    position: relative; width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  canvas {
+    display: block;
+    background: radial-gradient(circle at 50% 0%, #1c1533, #0d0a1a 70%);
+    cursor: pointer;
+    touch-action: none;
+  }
+  #hud {
+    position: absolute; top: 12px; left: 12px;
+    color: var(--ink); font-size: 13px; line-height: 1.7;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.6); pointer-events: none;
+  }
+  #hud .label { color: var(--ink-dim); }
+  #hud .val { color: var(--gold); font-weight: 700; }
+  #hud-best { position: absolute; top: 12px; right: 44px; text-align: right; }
+
+  #sound-toggle {
+    position: absolute; top: 8px; right: 8px;
+    width: 28px; height: 28px; padding: 0;
+    background: rgba(21, 15, 34, 0.6); border: 1px solid rgba(244,238,253,0.15);
+    border-radius: 6px; color: var(--ink); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 6;
+  }
+  #sound-toggle svg { width: 16px; height: 16px; display: block; }
+  #sound-toggle .mute-x { opacity: 0; }
+  #sound-toggle.muted .wave { opacity: 0; }
+  #sound-toggle.muted .mute-x { opacity: 1; }
+
+  #perfect-flash {
+    position: absolute; top: 38%; left: 50%; transform: translate(-50%, -50%);
+    font-weight: 800; font-size: 22px; letter-spacing: 0.08em;
+    color: var(--gold); text-shadow: 0 0 12px rgba(242,177,52,0.8);
+    opacity: 0; pointer-events: none; transition: opacity 0.15s ease, transform 0.15s ease;
+  }
+  #perfect-flash.show { opacity: 1; transform: translate(-50%, -60%); }
+
+  #overlay, #start-screen {
+    position: absolute; inset: 0; display: none;
+    align-items: center; justify-content: center; flex-direction: column;
+    background: rgba(13, 10, 26, 0.9); color: var(--ink);
+    text-align: center; padding: 1.5rem; z-index: 5;
+  }
+  #overlay.show, #start-screen.show { display: flex; }
+  #overlay h2 { font-size: 1.6rem; margin: 0 0 0.3rem; color: var(--coral); }
+  #overlay p, #start-screen p { color: var(--ink-dim); margin: 0 0 1.4rem; font-size: 0.95rem; max-width: 340px; }
+  #start-screen h1 {
+    font-size: 1.7rem; margin: 0 0 0.4rem;
+    background: linear-gradient(90deg, var(--gold), var(--coral));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  #overlay button, #start-screen button {
+    font-size: 1rem; font-weight: 700; color: #1a1226;
+    background: var(--gold); border: none; border-radius: 8px;
+    padding: 0.8rem 1.8rem; cursor: pointer;
+  }
+  #overlay button:hover, #start-screen button:hover { background: var(--coral); }
+</style>
+</head>
+<body>
+<div id="game-wrap">
+  <canvas id="game"></canvas>
+
+  <div id="hud">
+    <div><span class="label">Height</span> <span class="val" id="hud-score">0</span></div>
+  </div>
+  <div id="hud-best">
+    <div><span class="label">Best</span> <span class="val" id="hud-best-val">0</span></div>
+  </div>
+
+  <button id="sound-toggle" aria-label="Toggle sound" title="Toggle sound">
+    <svg viewBox="0 0 24 24">
+      <path d="M3 9v6h4l5 5V4L7 9H3z" fill="currentColor"/>
+      <path class="wave" d="M16 8a5 5 0 0 1 0 8" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path class="wave" d="M18.5 5.5a9 9 0 0 1 0 13" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.6"/>
+      <path class="mute-x" d="M16 9l5 6M21 9l-5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+  </button>
+
+  <div id="perfect-flash">PERFECT</div>
+
+  <div id="overlay">
+    <h2 id="overlay-title">Tower Collapsed</h2>
+    <p id="overlay-sub">Final height: 0</p>
+    <button id="retry-btn">Play Again</button>
+  </div>
+
+  <div id="start-screen" class="show">
+    <h1>NEON STACK</h1>
+    <p>Tap or click to drop each block onto the tower. Line it up as precisely as you can — anything hanging over the edge breaks off, and a full miss ends the run.</p>
+    <button id="start-btn">Start</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const wrap = document.getElementById('game-wrap');
+  const hudScore = document.getElementById('hud-score');
+  const hudBest = document.getElementById('hud-best-val');
+  const overlay = document.getElementById('overlay');
+  const overlayTitle = document.getElementById('overlay-title');
+  const overlaySub = document.getElementById('overlay-sub');
+  const retryBtn = document.getElementById('retry-btn');
+  const startScreen = document.getElementById('start-screen');
+  const startBtn = document.getElementById('start-btn');
+  const soundToggle = document.getElementById('sound-toggle');
+  const perfectFlash = document.getElementById('perfect-flash');
+
+  // ---------- Audio (synthesized, no external files) ----------
+  let audioCtx = null;
+  let soundOn = true;
+  try {
+    soundOn = localStorage.getItem('neonstack_sound') !== 'off';
+  } catch (e) { /* ignore */ }
+  if (!soundOn) soundToggle.classList.add('muted');
+
+  function getAudioCtx() {
+    if (!audioCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) audioCtx = new AC();
+    }
+    return audioCtx;
+  }
+
+  function tone(freq, duration, waveType, peakGain, delay) {
+    if (!soundOn) return;
+    const ac = getAudioCtx();
+    if (!ac) return;
+    if (ac.state === 'suspended') ac.resume();
+    const t0 = ac.currentTime + (delay || 0);
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    osc.type = waveType || 'sine';
+    osc.frequency.setValueAtTime(freq, t0);
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.exponentialRampToValueAtTime(peakGain, t0 + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+    osc.connect(gain);
+    gain.connect(ac.destination);
+    osc.start(t0);
+    osc.stop(t0 + duration + 0.02);
+  }
+
+  function sfxPlace(height) { tone(360 + Math.min(height, 20) * 8, 0.09, 'triangle', 0.14); }
+  function sfxPerfect() {
+    tone(680, 0.09, 'sine', 0.16);
+    tone(880, 0.11, 'sine', 0.12, 0.05);
+  }
+  function sfxMiss() {
+    tone(300, 0.25, 'sawtooth', 0.15, 0);
+    tone(200, 0.3, 'sawtooth', 0.15, 0.15);
+  }
+
+  soundToggle.addEventListener('click', () => {
+    soundOn = !soundOn;
+    soundToggle.classList.toggle('muted', !soundOn);
+    try { localStorage.setItem('neonstack_sound', soundOn ? 'on' : 'off'); } catch (e) { /* ignore */ }
+    if (soundOn) {
+      const ac = getAudioCtx();
+      if (ac && ac.state === 'suspended') ac.resume();
+    }
+  });
+
+  // ---------- Logical resolution (letterboxed to fit container) ----------
+  const LW = 480, LH = 720;
+  const BLOCK_H = 30;
+  const BASE_WIDTH = 220;
+  const BASE_Y = LH - 150;
+  const PERFECT_THRESHOLD = 6;
+  const MIN_PLAYABLE_WIDTH = 14;
+
+  const PALETTE = [
+    '#f2b134', '#ff6f59', '#6ee7ff', '#9d7bff', '#7dffb3', '#ff9ecb',
+  ];
+
+  let DPR = 1;
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    const containerW = wrap.clientWidth;
+    const containerH = wrap.clientHeight;
+    const scale = Math.min(containerW / LW, containerH / LH);
+    canvas.style.width = (LW * scale) + 'px';
+    canvas.style.height = (LH * scale) + 'px';
+    canvas.width = LW * DPR;
+    canvas.height = LH * DPR;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+  window.addEventListener('resize', resize);
+
+  let stack = [];        // { x, w, y, color }
+  let mover = null;      // { x, w, y, dir, speed, color }
+  let debris = [];       // falling cut-off pieces
+  let score = 0;
+  let best = 0;
+  let combo = 0;
+  let running = false;
+  let gameOver = false;
+  let lastTime = 0;
+  let camY = 0;
+
+  try {
+    const savedBest = localStorage.getItem('neonstack_best');
+    if (savedBest) best = parseInt(savedBest, 10) || 0;
+  } catch (e) { /* ignore */ }
+  hudBest.textContent = best;
+
+  function colorFor(i) { return PALETTE[i % PALETTE.length]; }
+
+  function speedForHeight(h) {
+    return Math.min(340, 150 + h * 6);
+  }
+
+  function spawnMover(afterBlock) {
+    const dir = Math.random() < 0.5 ? -1 : 1;
+    const startX = dir === 1 ? -afterBlock.w : LW + afterBlock.w;
+    mover = {
+      x: startX,
+      w: afterBlock.w,
+      y: afterBlock.y - BLOCK_H,
+      dir,
+      speed: speedForHeight(stack.length),
+      color: colorFor(stack.length),
+    };
+  }
+
+  function resetGame() {
+    stack = [{ x: (LW - BASE_WIDTH) / 2, w: BASE_WIDTH, y: BASE_Y, color: colorFor(0) }];
+    debris = [];
+    score = 0;
+    combo = 0;
+    gameOver = false;
+    camY = 0;
+    hudScore.textContent = '0';
+    spawnMover(stack[0]);
+  }
+
+  function addDebris(x, w, y, color) {
+    if (w <= 0) return;
+    debris.push({ x, w, y, color, vy: 0, vx: (x < LW / 2 ? -1 : 1) * 40, rot: 0, vrot: (Math.random() - 0.5) * 4, life: 1 });
+  }
+
+  function flashPerfect() {
+    perfectFlash.classList.remove('show');
+    void perfectFlash.offsetWidth;
+    perfectFlash.classList.add('show');
+  }
+
+  function drop() {
+    if (!running || gameOver || !mover) return;
+    const prev = stack[stack.length - 1];
+    const moverStart = mover.x, moverEnd = mover.x + mover.w;
+    const prevStart = prev.x, prevEnd = prev.x + prev.w;
+    const overlapStart = Math.max(moverStart, prevStart);
+    const overlapEnd = Math.min(moverEnd, prevEnd);
+    const overlapWidth = overlapEnd - overlapStart;
+
+    if (overlapWidth <= 0) {
+      addDebris(mover.x, mover.w, mover.y, mover.color);
+      mover = null;
+      triggerGameOver();
+      return;
+    }
+
+    const cutLeft = overlapStart - moverStart;
+    const cutRight = moverEnd - overlapEnd;
+    const totalCut = cutLeft + cutRight;
+    const isPerfect = totalCut < PERFECT_THRESHOLD;
+
+    let newX, newW;
+    if (isPerfect) {
+      newX = prevStart;
+      newW = prev.w;
+      combo++;
+      sfxPerfect();
+      flashPerfect();
+    } else {
+      newX = overlapStart;
+      newW = overlapWidth;
+      combo = 0;
+      if (cutLeft > 0) addDebris(moverStart, cutLeft, mover.y, mover.color);
+      if (cutRight > 0) addDebris(overlapEnd, cutRight, mover.y, mover.color);
+      sfxPlace(stack.length);
+    }
+
+    const newBlock = { x: newX, w: newW, y: mover.y, color: mover.color };
+    stack.push(newBlock);
+    mover = null;
+    score++;
+    hudScore.textContent = score;
+    if (score > best) {
+      best = score;
+      hudBest.textContent = best;
+      try { localStorage.setItem('neonstack_best', String(best)); } catch (e) { /* ignore */ }
+    }
+
+    if (newW < MIN_PLAYABLE_WIDTH) {
+      triggerGameOver();
+      return;
+    }
+
+    spawnMover(newBlock);
+  }
+
+  // ---------- Input ----------
+  canvas.addEventListener('mousedown', drop);
+  canvas.addEventListener('touchstart', (e) => { drop(); e.preventDefault(); }, { passive: false });
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') { drop(); e.preventDefault(); }
+  });
+
+  // ---------- Update / Draw ----------
+  function update(dt) {
+    if (mover && running && !gameOver) {
+      mover.x += mover.dir * mover.speed * dt;
+      if (mover.dir === 1 && mover.x > LW + 10) { mover.x = LW + 10; mover.dir = -1; }
+      if (mover.dir === -1 && mover.x < -mover.w - 10) { mover.x = -mover.w - 10; mover.dir = 1; }
+    }
+
+    for (let i = debris.length - 1; i >= 0; i--) {
+      const d = debris[i];
+      d.vy += 900 * dt;
+      d.y += d.vy * dt;
+      d.x += d.vx * dt;
+      d.rot += d.vrot * dt;
+      d.life -= dt * 0.7;
+      if (d.life <= 0 || d.y - camY > LH + 100) debris.splice(i, 1);
+    }
+
+    const topBlock = stack[stack.length - 1];
+    const targetCamY = Math.min(0, topBlock.y - LH * 0.55);
+    camY += (targetCamY - camY) * 0.12;
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, LW, LH);
+    ctx.save();
+    ctx.translate(0, -camY);
+
+    for (const b of stack) {
+      drawBlock(b.x, b.y, b.w, b.color);
+    }
+
+    for (const d of debris) {
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, d.life);
+      ctx.translate(d.x + d.w / 2, d.y + BLOCK_H / 2);
+      ctx.rotate(d.rot);
+      ctx.translate(-(d.x + d.w / 2), -(d.y + BLOCK_H / 2));
+      drawBlock(d.x, d.y, d.w, d.color);
+      ctx.restore();
+    }
+
+    if (mover && !gameOver) {
+      drawBlock(mover.x, mover.y, mover.w, mover.color);
+    }
+
+    ctx.restore();
+  }
+
+  function drawBlock(x, y, w, color) {
+    ctx.save();
+    ctx.fillStyle = color;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 10;
+    const r = 4;
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.arcTo(x + w, y, x + w, y + r, r);
+    ctx.lineTo(x + w, y + BLOCK_H - r);
+    ctx.arcTo(x + w, y + BLOCK_H, x + w - r, y + BLOCK_H, r);
+    ctx.lineTo(x + r, y + BLOCK_H);
+    ctx.arcTo(x, y + BLOCK_H, x, y + BLOCK_H - r, r);
+    ctx.lineTo(x, y + r);
+    ctx.arcTo(x, y, x + r, y, r);
+    ctx.closePath();
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(255,255,255,0.18)';
+    ctx.fillRect(x, y, w, 4);
+    ctx.restore();
+  }
+
+  function loop(ts) {
+    if (!running) return;
+    const dt = Math.min((ts - lastTime) / 1000, 0.05) || 0;
+    lastTime = ts;
+    update(dt);
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  function triggerGameOver() {
+    if (gameOver) return;
+    gameOver = true;
+    running = false;
+    overlayTitle.textContent = 'Tower Collapsed';
+    overlaySub.textContent = 'Final height: ' + score + (score >= best && score > 0 ? ' — new best!' : '');
+    overlay.classList.add('show');
+    sfxMiss();
+  }
+
+  function startGame() {
+    resize();
+    resetGame();
+    overlay.classList.remove('show');
+    startScreen.classList.remove('show');
+    running = true;
+    lastTime = performance.now();
+    requestAnimationFrame(loop);
+  }
+
+  startBtn.addEventListener('click', startGame);
+  retryBtn.addEventListener('click', startGame);
+
+  resize();
+})();
+</script>
+</body>
+</html>

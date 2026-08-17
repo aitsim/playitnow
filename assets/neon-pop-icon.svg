@@ -1,0 +1,41 @@
+<svg viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Neon Pop icon">
+  <defs>
+    <linearGradient id="bgP2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2f2148"/>
+      <stop offset="100%" stop-color="#1c1533"/>
+    </linearGradient>
+    <radialGradient id="bubbleGold" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#fff2d8"/>
+      <stop offset="35%" stop-color="#f2b134"/>
+      <stop offset="100%" stop-color="#c9820f"/>
+    </radialGradient>
+    <radialGradient id="bubbleCoral" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#ffe0d8"/>
+      <stop offset="35%" stop-color="#ff6f59"/>
+      <stop offset="100%" stop-color="#c53f2c"/>
+    </radialGradient>
+    <radialGradient id="bubbleCyan" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#e3faff"/>
+      <stop offset="35%" stop-color="#6ee7ff"/>
+      <stop offset="100%" stop-color="#2ba7c4"/>
+    </radialGradient>
+    <filter id="glowP3" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect x="0" y="0" width="140" height="140" rx="28" fill="url(#bgP2)"/>
+
+  <circle cx="42" cy="48" r="10" fill="#3c2b5c"/>
+  <circle cx="100" cy="42" r="7" fill="#3c2b5c"/>
+
+  <g filter="url(#glowP3)">
+    <circle cx="60" cy="78" r="26" fill="url(#bubbleGold)"/>
+    <circle cx="98" cy="88" r="20" fill="url(#bubbleCoral)"/>
+    <circle cx="52" cy="112" r="16" fill="url(#bubbleCyan)"/>
+  </g>
+</svg>
