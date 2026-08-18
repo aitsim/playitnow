@@ -1,0 +1,37 @@
+<svg viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Neon Climb icon">
+  <defs>
+    <linearGradient id="bgC" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2f2148"/>
+      <stop offset="100%" stop-color="#1c1533"/>
+    </linearGradient>
+    <linearGradient id="iplatGrad1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f2b134"/>
+      <stop offset="100%" stop-color="#ffce6b"/>
+    </linearGradient>
+    <linearGradient id="iplatGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#6ee7ff"/>
+      <stop offset="100%" stop-color="#9df3ff"/>
+    </linearGradient>
+    <linearGradient id="iplatGrad3" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ff6f59"/>
+      <stop offset="100%" stop-color="#ff9c8a"/>
+    </linearGradient>
+    <filter id="glowIC" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="3.2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect x="0" y="0" width="140" height="140" rx="28" fill="url(#bgC)"/>
+
+  <g filter="url(#glowIC)">
+    <rect x="22" y="98" width="44" height="10" rx="5" fill="url(#iplatGrad3)"/>
+    <rect x="56" y="68" width="44" height="10" rx="5" fill="url(#iplatGrad2)"/>
+    <rect x="40" y="38" width="44" height="10" rx="5" fill="url(#iplatGrad1)"/>
+    <circle cx="106" cy="26" r="11" fill="#ff6f59"/>
+    <circle cx="110" cy="22" r="2.6" fill="#150f22"/>
+  </g>
+</svg>

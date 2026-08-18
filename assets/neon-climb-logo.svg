@@ -1,0 +1,50 @@
+<svg viewBox="0 0 560 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Neon Climb logo">
+  <defs>
+    <linearGradient id="platGrad1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f2b134"/>
+      <stop offset="100%" stop-color="#ffce6b"/>
+    </linearGradient>
+    <linearGradient id="platGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#6ee7ff"/>
+      <stop offset="100%" stop-color="#9df3ff"/>
+    </linearGradient>
+    <linearGradient id="platGrad3" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ff6f59"/>
+      <stop offset="100%" stop-color="#ff9c8a"/>
+    </linearGradient>
+    <linearGradient id="textGrad3" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ff6f59"/>
+      <stop offset="55%" stop-color="#f2b134"/>
+      <stop offset="100%" stop-color="#f2b134"/>
+    </linearGradient>
+    <filter id="glowC" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="glowCSoft" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- ascending platforms + climber mark -->
+  <g filter="url(#glowC)">
+    <rect x="14" y="112" width="46" height="10" rx="5" fill="url(#platGrad3)"/>
+    <rect x="46" y="82" width="46" height="10" rx="5" fill="url(#platGrad2)"/>
+    <rect x="30" y="52" width="46" height="10" rx="5" fill="url(#platGrad1)"/>
+    <circle cx="98" cy="38" r="11" fill="#ff6f59"/>
+    <circle cx="102" cy="34" r="2.6" fill="#150f22"/>
+  </g>
+
+  <!-- wordmark -->
+  <text x="150" y="78" font-family="'Press Start 2P','Courier New',monospace"
+        font-size="30" fill="url(#textGrad3)" filter="url(#glowCSoft)">NEON</text>
+  <text x="150" y="112" font-family="'Press Start 2P','Courier New',monospace"
+        font-size="30" fill="#f4eefd">CLIMB</text>
+</svg>

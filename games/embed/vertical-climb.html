@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Neon Climb</title>
+<style>
+  :root {
+    --bg: #0d0a1a;
+    --ink: #f4eefd;
+    --ink-dim: #9c8fc2;
+    --gold: #f2b134;
+    --coral: #ff6f59;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; width: 100%; height: 100%;
+    background: var(--bg); overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    -webkit-user-select: none; user-select: none; touch-action: none;
+  }
+  #game-wrap {
+    position: relative; width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  canvas {
+    display: block;
+    background: linear-gradient(180deg, #1c1533, #0d0a1a 80%);
+    cursor: pointer;
+    touch-action: none;
+  }
+  #hud {
+    position: absolute; top: 12px; left: 12px;
+    color: var(--ink); font-size: 13px; line-height: 1.7;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.6); pointer-events: none;
+  }
+  #hud .label, #hud-best .label { color: var(--ink-dim); }
+  #hud .val, #hud-best .val { color: var(--gold); font-weight: 700; }
+  #hud-best { position: absolute; top: 12px; right: 44px; text-align: right; }
+
+  #sound-toggle {
+    position: absolute; top: 8px; right: 8px;
+    width: 28px; height: 28px; padding: 0;
+    background: rgba(21, 15, 34, 0.6); border: 1px solid rgba(244,238,253,0.15);
+    border-radius: 6px; color: var(--ink); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 6;
+  }
+  #sound-toggle svg { width: 16px; height: 16px; display: block; }
+  #sound-toggle .mute-x { opacity: 0; }
+  #sound-toggle.muted .wave { opacity: 0; }
+  #sound-toggle.muted .mute-x { opacity: 1; }
+
+  #overlay, #start-screen {
+    position: absolute; inset: 0; display: none;
+    align-items: center; justify-content: center; flex-direction: column;
+    background: rgba(13, 10, 26, 0.9); color: var(--ink);
+    text-align: center; padding: 1.5rem; z-index: 5;
+  }
+  #overlay.show, #start-screen.show { display: flex; }
+  #overlay h2 { font-size: 1.6rem; margin: 0 0 0.3rem; color: var(--coral); }
+  #overlay p, #start-screen p { color: var(--ink-dim); margin: 0 0 1.4rem; font-size: 0.95rem; max-width: 340px; }
+  #start-screen h1 {
+    font-size: 1.7rem; margin: 0 0 0.4rem;
+    background: linear-gradient(90deg, var(--gold), var(--coral));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  #overlay button, #start-screen button {
+    font-size: 1rem; font-weight: 700; color: #1a1226;
+    background: var(--gold); border: none; border-radius: 8px;
+    padding: 0.8rem 1.8rem; cursor: pointer;
+  }
+  #overlay button:hover, #start-screen button:hover { background: var(--coral); }
+</style>
+</head>
+<body>
+<div id="game-wrap">
+  <canvas id="game"></canvas>
+
+  <div id="hud">
+    <div><span class="label">Height</span> <span class="val" id="hud-height">0</span><span class="label">m</span></div>
+  </div>
+  <div id="hud-best">
+    <div><span class="label">Best</span> <span class="val" id="hud-best-val">0</span><span class="label">m</span></div>
+  </div>
+
+  <button id="sound-toggle" aria-label="Toggle sound" title="Toggle sound">
+    <svg viewBox="0 0 24 24">
+      <path d="M3 9v6h4l5 5V4L7 9H3z" fill="currentColor"/>
+      <path class="wave" d="M16 8a5 5 0 0 1 0 8" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path class="wave" d="M18.5 5.5a9 9 0 0 1 0 13" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.6"/>
+      <path class="mute-x" d="M16 9l5 6M21 9l-5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+  </button>
+
+  <div id="overlay">
+    <h2 id="overlay-title">Game Over</h2>
+    <p id="overlay-sub">You fell.</p>
+    <button id="retry-btn">Play Again</button>
+  </div>
+
+  <div id="start-screen" class="show">
+    <h1>NEON CLIMB</h1>
+    <p>Move your mouse (or drag your finger) left and right to steer. Your character auto-bounces off platforms — just keep climbing and don't fall behind.</p>
+    <button id="start-btn">Start</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const wrap = document.getElementById('game-wrap');
+  const hudHeight = document.getElementById('hud-height');
+  const hudBest = document.getElementById('hud-best-val');
+  const overlay = document.getElementById('overlay');
+  const overlayTitle = document.getElementById('overlay-title');
+  const overlaySub = document.getElementById('overlay-sub');
+  const retryBtn = document.getElementById('retry-btn');
+  const startScreen = document.getElementById('start-screen');
+  const startBtn = document.getElementById('start-btn');
+  const soundToggle = document.getElementById('sound-toggle');
+
+  // ---------- Audio (synthesized, no external files) ----------
+  let audioCtx = null;
+  let soundOn = true;
+  try {
+    soundOn = localStorage.getItem('neonclimb_sound') !== 'off';
+  } catch (e) { /* ignore */ }
+  if (!soundOn) soundToggle.classList.add('muted');
+
+  function getAudioCtx() {
+    if (!audioCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) audioCtx = new AC();
+    }
+    return audioCtx;
+  }
+
+  function tone(freq, duration, waveType, peakGain, delay) {
+    if (!soundOn) return;
+    const ac = getAudioCtx();
+    if (!ac) return;
+    if (ac.state === 'suspended') ac.resume();
+    const t0 = ac.currentTime + (delay || 0);
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    osc.type = waveType || 'sine';
+    osc.frequency.setValueAtTime(freq, t0);
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.exponentialRampToValueAtTime(peakGain, t0 + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+    osc.connect(gain);
+    gain.connect(ac.destination);
+    osc.start(t0);
+    osc.stop(t0 + duration + 0.02);
+  }
+
+  function sfxBounce() { tone(480, 0.08, 'triangle', 0.13); }
+  function sfxBreak() { tone(220, 0.12, 'sawtooth', 0.1); }
+  function sfxGameOver() {
+    tone(300, 0.22, 'sawtooth', 0.15, 0);
+    tone(200, 0.3, 'sawtooth', 0.15, 0.16);
+  }
+
+  soundToggle.addEventListener('click', () => {
+    soundOn = !soundOn;
+    soundToggle.classList.toggle('muted', !soundOn);
+    try { localStorage.setItem('neonclimb_sound', soundOn ? 'on' : 'off'); } catch (e) { /* ignore */ }
+    if (soundOn) {
+      const ac = getAudioCtx();
+      if (ac && ac.state === 'suspended') ac.resume();
+    }
+  });
+
+  // ---------- Logical resolution (letterboxed to fit container) ----------
+  const LW = 420, LH = 720;
+  const GRAVITY = 1500;
+  const JUMP_V = -700;
+  const PLAYER_R = 14;
+  const PLAT_W = 68, PLAT_H = 14;
+  const CAMERA_TRIGGER = LH * 0.42;
+
+  let DPR = 1;
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    const containerW = wrap.clientWidth;
+    const containerH = wrap.clientHeight;
+    const scale = Math.min(containerW / LW, containerH / LH);
+    canvas.style.width = (LW * scale) + 'px';
+    canvas.style.height = (LH * scale) + 'px';
+    canvas.width = LW * DPR;
+    canvas.height = LH * DPR;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+  window.addEventListener('resize', resize);
+
+  // ---------- State ----------
+  let player = { x: LW / 2, y: LH - 100, vy: JUMP_V };
+  let platforms = [];
+  let cameraY = 0;
+  let startY = LH - 100;
+  let heightM = 0;
+  let best = 0;
+  let running = false;
+  let gameOver = false;
+  let lastTime = 0;
+  let pointerX = LW / 2;
+  let pointerActive = false;
+  let particles = [];
+
+  try {
+    const saved = localStorage.getItem('neonclimb_best');
+    if (saved) best = parseInt(saved, 10) || 0;
+  } catch (e) { /* ignore */ }
+  hudBest.textContent = best;
+
+  function rand(min, max) { return Math.random() * (max - min) + min; }
+
+  function platformTypeForHeight(h) {
+    // h = meters climbed. Higher = harder mix.
+    const r = Math.random();
+    if (h < 15) return 'static';
+    if (h < 40) return r < 0.75 ? 'static' : 'moving';
+    if (h < 80) return r < 0.55 ? 'static' : (r < 0.85 ? 'moving' : 'break');
+    return r < 0.4 ? 'static' : (r < 0.75 ? 'moving' : 'break');
+  }
+
+  function makePlatform(y, heightAtGen) {
+    const type = platformTypeForHeight(heightAtGen);
+    return {
+      x: rand(PLAT_W / 2, LW - PLAT_W / 2),
+      y,
+      w: PLAT_W,
+      type,
+      vx: type === 'moving' ? (Math.random() < 0.5 ? -1 : 1) * rand(50, 110) : 0,
+      broken: false,
+      breakTimer: 0,
+    };
+  }
+
+  function highestPlatformY() {
+    let top = LH;
+    for (const p of platforms) if (p.y < top) top = p.y;
+    return top;
+  }
+
+  function initPlatforms() {
+    platforms = [];
+    // a safe starting platform right under the player
+    platforms.push({ x: LW / 2, y: LH - 60, w: PLAT_W, type: 'static', vx: 0, broken: false, breakTimer: 0 });
+    let y = LH - 60;
+    while (y > -200) {
+      y -= rand(70, 110);
+      platforms.push(makePlatform(y, 0));
+    }
+  }
+
+  function resetGame() {
+    player = { x: LW / 2, y: LH - 100, vy: JUMP_V };
+    startY = player.y;
+    cameraY = 0;
+    heightM = 0;
+    gameOver = false;
+    particles = [];
+    initPlatforms();
+    hudHeight.textContent = '0';
+  }
+
+  // ---------- Input ----------
+  function pointerToLogicalX(clientX) {
+    const rect = canvas.getBoundingClientRect();
+    const relX = (clientX - rect.left) / rect.width;
+    return relX * LW;
+  }
+  canvas.addEventListener('mousemove', (e) => {
+    pointerX = pointerToLogicalX(e.clientX);
+    pointerActive = true;
+  });
+  canvas.addEventListener('touchstart', (e) => {
+    pointerX = pointerToLogicalX(e.touches[0].clientX);
+    pointerActive = true;
+    e.preventDefault();
+  }, { passive: false });
+  canvas.addEventListener('touchmove', (e) => {
+    pointerX = pointerToLogicalX(e.touches[0].clientX);
+    pointerActive = true;
+    e.preventDefault();
+  }, { passive: false });
+
+  // ---------- Update ----------
+  function update(dt) {
+    if (pointerActive) {
+      const dx = pointerX - player.x;
+      player.x += dx * Math.min(dt * 10, 1);
+    }
+    if (player.x < -PLAYER_R) player.x = LW + PLAYER_R;
+    if (player.x > LW + PLAYER_R) player.x = -PLAYER_R;
+
+    player.vy += GRAVITY * dt;
+    player.y += player.vy * dt;
+
+    // platform collisions only while falling
+    if (player.vy > 0) {
+      for (const p of platforms) {
+        if (p.broken) continue;
+        const withinX = Math.abs(player.x - p.x) < (p.w / 2 + PLAYER_R * 0.6);
+        const wasAbove = (player.y - player.vy * dt) + PLAYER_R <= p.y;
+        const nowAtOrBelow = player.y + PLAYER_R >= p.y;
+        if (withinX && wasAbove && nowAtOrBelow) {
+          player.y = p.y - PLAYER_R;
+          player.vy = JUMP_V;
+          sfxBounce();
+          for (let i = 0; i < 6; i++) {
+            particles.push({
+              x: p.x + rand(-p.w / 2, p.w / 2), y: p.y,
+              vx: rand(-60, 60), vy: rand(-120, -20), life: 1,
+            });
+          }
+          if (p.type === 'break') {
+            p.broken = true;
+            p.breakTimer = 0.25;
+            sfxBreak();
+          }
+          break;
+        }
+      }
+    }
+
+    // moving platforms
+    for (const p of platforms) {
+      if (p.type === 'moving' && !p.broken) {
+        p.x += p.vx * dt;
+        if (p.x < p.w / 2) { p.x = p.w / 2; p.vx *= -1; }
+        if (p.x > LW - p.w / 2) { p.x = LW - p.w / 2; p.vx *= -1; }
+      }
+      if (p.broken) p.breakTimer -= dt;
+    }
+    platforms = platforms.filter(p => !(p.broken && p.breakTimer <= 0));
+
+    // camera only ever moves up
+    const targetCamera = player.y - CAMERA_TRIGGER;
+    if (targetCamera < cameraY) cameraY = targetCamera;
+
+    // height score
+    const climbed = Math.max(0, (startY - player.y) / 12);
+    if (climbed > heightM) {
+      heightM = climbed;
+      hudHeight.textContent = Math.floor(heightM);
+      if (Math.floor(heightM) > best) {
+        best = Math.floor(heightM);
+        hudBest.textContent = best;
+        try { localStorage.setItem('neonclimb_best', String(best)); } catch (e) { /* ignore */ }
+      }
+    }
+
+    // generate new platforms above as needed
+    while (highestPlatformY() > cameraY - 100) {
+      platforms.push(makePlatform(highestPlatformY() - rand(70, 110 + Math.min(heightM, 60)), heightM));
+    }
+    // cleanup platforms far below camera view
+    platforms = platforms.filter(p => p.y < cameraY + LH + 100);
+
+    // particles
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const pt = particles[i];
+      pt.x += pt.vx * dt;
+      pt.y += pt.vy * dt;
+      pt.vy += GRAVITY * 0.3 * dt;
+      pt.life -= dt * 1.8;
+      if (pt.life <= 0) particles.splice(i, 1);
+    }
+
+    // fall off bottom of visible camera = game over
+    if (player.y - cameraY > LH + 60) {
+      triggerGameOver();
+    }
+  }
+
+  function triggerGameOver() {
+    if (gameOver) return;
+    gameOver = true;
+    running = false;
+    overlayTitle.textContent = 'Game Over';
+    overlaySub.textContent = 'You climbed ' + Math.floor(heightM) + 'm' +
+      (Math.floor(heightM) >= best ? ' — new best!' : '');
+    overlay.classList.add('show');
+    sfxGameOver();
+  }
+
+  // ---------- Draw ----------
+  function drawPlatform(p) {
+    const y = p.y - cameraY;
+    if (y < -40 || y > LH + 40) return;
+    ctx.save();
+    if (p.broken) ctx.globalAlpha = Math.max(p.breakTimer / 0.25, 0);
+    let fill = '#f2b134', glow = 'rgba(242,177,52,0.5)';
+    if (p.type === 'moving') { fill = '#6ee7ff'; glow = 'rgba(110,231,255,0.5)'; }
+    if (p.type === 'break') { fill = '#ff6f59'; glow = 'rgba(255,111,89,0.5)'; }
+    ctx.shadowColor = glow;
+    ctx.shadowBlur = 8;
+    ctx.fillStyle = fill;
+    const x = p.x - p.w / 2;
+    const r = 6;
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + p.w, y, x + p.w, y + PLAT_H, r);
+    ctx.arcTo(x + p.w, y + PLAT_H, x, y + PLAT_H, r);
+    ctx.arcTo(x, y + PLAT_H, x, y, r);
+    ctx.arcTo(x, y, x + p.w, y, r);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawPlayer() {
+    const y = player.y - cameraY;
+    ctx.save();
+    ctx.shadowColor = 'rgba(255,111,89,0.7)';
+    ctx.shadowBlur = 14;
+    ctx.fillStyle = '#ff6f59';
+    ctx.beginPath();
+    ctx.arc(player.x, y, PLAYER_R, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.beginPath();
+    ctx.arc(player.x - PLAYER_R * 0.3, y - PLAYER_R * 0.3, PLAYER_R * 0.3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, LW, LH);
+
+    // background stars (parallax-ish, cheap static twinkle field)
+    ctx.fillStyle = 'rgba(244,238,253,0.15)';
+    for (let i = 0; i < 40; i++) {
+      const sx = (i * 97) % LW;
+      const sy = ((i * 53 - cameraY * 0.3) % (LH + 100) + (LH + 100)) % (LH + 100) - 50;
+      ctx.fillRect(sx, sy, 2, 2);
+    }
+
+    for (const p of platforms) drawPlatform(p);
+
+    for (const pt of particles) {
+      ctx.save();
+      ctx.globalAlpha = Math.max(pt.life, 0);
+      ctx.fillStyle = '#f2b134';
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y - cameraY, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    if (!gameOver) drawPlayer();
+  }
+
+  function loop(ts) {
+    if (!running) return;
+    const dt = Math.min((ts - lastTime) / 1000, 0.05) || 0;
+    lastTime = ts;
+    update(dt);
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  function startGame() {
+    resize();
+    resetGame();
+    overlay.classList.remove('show');
+    startScreen.classList.remove('show');
+    running = true;
+    lastTime = performance.now();
+    requestAnimationFrame(loop);
+  }
+
+  startBtn.addEventListener('click', startGame);
+  retryBtn.addEventListener('click', startGame);
+
+  resize();
+  draw();
+})();
+</script>
+</body>
+</html>
