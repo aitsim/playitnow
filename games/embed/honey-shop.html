@@ -1,0 +1,1495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Buzzy Bear's Honey Shop</title>
+<style>
+  :root {
+    --ink: #4a2e18;
+    --ink-dim: #8a6a45;
+    --honey: #f2b134;
+    --coral: #ff6f59;
+    --leaf: #4caf6b;
+    --panel: rgba(255,250,238,0.88);
+    --wood: #a9713f;
+    --wood-dark: #7a4d28;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; width: 100%; height: 100%;
+    background: #bfe8ff; overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    -webkit-user-select: none; user-select: none; touch-action: none;
+  }
+  #game-wrap {
+    position: relative; width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  canvas {
+    display: block;
+    cursor: default;
+    touch-action: none;
+  }
+
+  /* ---------- HUD ---------- */
+  #hud-top {
+    position: absolute; top: 8px; left: 0; right: 0;
+    display: flex; align-items: flex-start; justify-content: space-between;
+    padding: 0 10px; pointer-events: none;
+  }
+  .hud-chip {
+    background: var(--panel); border: 1px solid rgba(74,46,24,0.2);
+    border-radius: 8px; padding: 4px 10px; display: flex; align-items: center; gap: 5px;
+    font-size: 13px; font-weight: 700; color: var(--ink);
+    box-shadow: 0 2px 0 rgba(74,46,24,0.12);
+  }
+  .hud-chip img { width: 16px; height: 16px; display: block; }
+  #hud-day { font-size: 12px; }
+  #hud-timer.warn { color: var(--coral); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+
+  #sound-toggle {
+    position: absolute; top: 8px; right: 8px;
+    width: 26px; height: 26px; padding: 0;
+    background: rgba(255,255,255,0.65); border: 1px solid rgba(74,46,24,0.2);
+    border-radius: 6px; color: var(--ink); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 8; pointer-events: auto;
+  }
+  #sound-toggle svg { width: 14px; height: 14px; display: block; }
+  #sound-toggle .mute-x { opacity: 0; }
+  #sound-toggle.muted .wave { opacity: 0; }
+  #sound-toggle.muted .mute-x { opacity: 1; }
+
+  /* ---------- D-pad (touch) ---------- */
+  #dpad {
+    position: absolute; left: 10px; bottom: 10px; z-index: 7;
+    display: none;
+    grid-template-columns: 38px 38px 38px;
+    grid-template-rows: 38px 38px 38px;
+    gap: 2px;
+    opacity: 0.85;
+  }
+  body.touch-controls #dpad { display: grid; }
+  #dpad button {
+    background: var(--panel); border: 1px solid rgba(74,46,24,0.25);
+    border-radius: 6px; color: var(--ink); font-size: 15px; font-family: inherit;
+    padding: 0; display: flex; align-items: center; justify-content: center;
+  }
+  #dpad button:active { background: var(--honey); }
+  .dpad-up { grid-column: 2; grid-row: 1; }
+  .dpad-left { grid-column: 1; grid-row: 2; }
+  .dpad-right { grid-column: 3; grid-row: 2; }
+  .dpad-down { grid-column: 2; grid-row: 3; }
+
+  /* ---------- Overlays ---------- */
+  #overlay, #start-screen {
+    position: absolute; inset: 0; display: none;
+    align-items: center; justify-content: center; flex-direction: column;
+    background: rgba(74, 46, 24, 0.55);
+    text-align: center; padding: 1rem; z-index: 9;
+  }
+  #overlay.show, #start-screen.show { display: flex; }
+
+  .board {
+    background: linear-gradient(180deg, var(--wood), var(--wood-dark));
+    border: 6px solid #5c3a1e;
+    border-radius: 14px;
+    padding: 1.4rem 1.8rem;
+    max-width: 420px;
+    width: 100%;
+    color: #fff3d6;
+    box-shadow: 0 14px 0 rgba(0,0,0,0.25), 0 20px 40px rgba(0,0,0,0.35);
+  }
+  .board h2 { margin: 0 0 0.2rem; font-size: 1.35rem; color: #fff3d6; text-shadow: 0 2px 0 rgba(0,0,0,0.25); }
+  .board .newbest {
+    display: inline-block; margin: 0.3rem 0 0.6rem; font-size: 0.75rem; font-weight: 800;
+    background: var(--honey); color: #4a2e18; padding: 0.2rem 0.6rem; border-radius: 999px;
+  }
+  #day-stats { width: 100%; border-collapse: collapse; margin: 0.6rem 0 1rem; font-size: 0.82rem; }
+  #day-stats td { padding: 0.18rem 0; color: #fff3d6; }
+  #day-stats td:last-child { text-align: right; font-weight: 800; }
+  .board button, #start-screen .startbtn {
+    font-size: 0.95rem; font-weight: 800; color: #4a2e18;
+    background: var(--honey); border: none; border-radius: 8px;
+    padding: 0.7rem 1.6rem; cursor: pointer; font-family: inherit;
+  }
+  .board button:hover, #start-screen .startbtn:hover { background: var(--coral); color: #fff; }
+
+  #start-screen h1 { font-size: 1.3rem; margin: 0 0 0.4rem; color: #fff3d6; text-shadow: 0 2px 0 rgba(0,0,0,0.25); }
+  #start-screen img.hero { width: 78px; height: 78px; object-fit: contain; margin-bottom: 0.4rem; filter: drop-shadow(0 6px 10px rgba(0,0,0,0.35)); }
+  #start-screen p { color: #f2e3c6; margin: 0 0 1.1rem; font-size: 0.85rem; max-width: 360px; }
+</style>
+</head>
+<body>
+<div id="game-wrap">
+  <canvas id="game"></canvas>
+
+  <div id="hud-top">
+    <div class="hud-chip"><img src="../../assets/honey-coin.png" alt="" /><span id="hud-coins">0</span></div>
+    <div class="hud-chip" id="hud-day">Day 1</div>
+    <div class="hud-chip" id="hud-timer">1:30</div>
+  </div>
+
+  <button id="sound-toggle" aria-label="Toggle sound" title="Toggle sound">
+    <svg viewBox="0 0 24 24">
+      <path d="M3 9v6h4l5 5V4L7 9H3z" fill="currentColor"/>
+      <path class="wave" d="M16 8a5 5 0 0 1 0 8" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path class="wave" d="M18.5 5.5a9 9 0 0 1 0 13" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.6"/>
+      <path class="mute-x" d="M16 9l5 6M21 9l-5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+  </button>
+
+  <div id="dpad">
+    <button class="dpad-up" data-dir="up">&#9650;</button>
+    <button class="dpad-left" data-dir="left">&#9664;</button>
+    <button class="dpad-right" data-dir="right">&#9654;</button>
+    <button class="dpad-down" data-dir="down">&#9660;</button>
+  </div>
+
+  <div id="overlay">
+    <div class="board">
+      <h2 id="overlay-title">Day 1 Complete!</h2>
+      <div id="overlay-badge"></div>
+      <table id="day-stats"></table>
+      <button id="retry-btn">Start Day 2</button>
+    </div>
+  </div>
+
+  <div id="start-screen" class="show">
+    <img class="hero" src="../../assets/honey-bear-happy.png" alt="" />
+    <h1>Buzzy Bear's Honey Shop</h1>
+    <p>Walk up to the tree to harvest honeycomb, carry it to the stand to stock it, and sell to customers automatically. Move with WASD or the arrow keys, and walk over coins to collect them. Coins and upgrades carry over between days.</p>
+    <button class="startbtn" id="start-btn">Start Day 1</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const wrap = document.getElementById('game-wrap');
+  const hudCoins = document.getElementById('hud-coins');
+  const hudDay = document.getElementById('hud-day');
+  const hudTimer = document.getElementById('hud-timer');
+  const overlay = document.getElementById('overlay');
+  const overlayTitle = document.getElementById('overlay-title');
+  const overlayBadge = document.getElementById('overlay-badge');
+  const dayStats = document.getElementById('day-stats');
+  const retryBtn = document.getElementById('retry-btn');
+  const startScreen = document.getElementById('start-screen');
+  const startBtn = document.getElementById('start-btn');
+  const soundToggle = document.getElementById('sound-toggle');
+  const dpad = document.getElementById('dpad');
+
+  // ---------- Audio (synthesized, no external files) ----------
+  let audioCtx = null;
+  let soundOn = true;
+  try { soundOn = localStorage.getItem('honeyshop_sound') !== 'off'; } catch (e) {}
+  if (!soundOn) soundToggle.classList.add('muted');
+
+  function getAudioCtx() {
+    if (!audioCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) audioCtx = new AC();
+    }
+    return audioCtx;
+  }
+
+  function tone(freq, duration, waveType, peakGain, delay) {
+    if (!soundOn) return;
+    const ac = getAudioCtx();
+    if (!ac) return;
+    if (ac.state === 'suspended') ac.resume();
+    const t0 = ac.currentTime + (delay || 0);
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    osc.type = waveType || 'sine';
+    osc.frequency.setValueAtTime(freq, t0);
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.exponentialRampToValueAtTime(peakGain, t0 + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+    osc.connect(gain);
+    gain.connect(ac.destination);
+    osc.start(t0);
+    osc.stop(t0 + duration + 0.02);
+  }
+
+  function sfxHarvestTick() { tone(560, 0.05, 'sine', 0.07); }
+  function sfxHarvestDone() { tone(620, 0.08, 'sine', 0.15); tone(840, 0.1, 'sine', 0.1, 0.05); }
+  function sfxStock() { tone(400, 0.07, 'triangle', 0.12); }
+  function sfxHelperStock() { tone(520, 0.06, 'triangle', 0.09); tone(680, 0.07, 'triangle', 0.07, 0.04); }
+  function sfxSell() { tone(700, 0.09, 'sine', 0.16); tone(940, 0.13, 'sine', 0.11, 0.05); }
+  function sfxCoin() { tone(1000, 0.06, 'square', 0.08); }
+  function sfxSting() { tone(180, 0.12, 'sawtooth', 0.16); tone(140, 0.16, 'sawtooth', 0.13, 0.08); }
+  function sfxUpgrade() { tone(440, 0.08, 'square', 0.13, 0); tone(560, 0.08, 'square', 0.13, 0.07); tone(700, 0.12, 'square', 0.13, 0.14); }
+  function sfxDenied() { tone(220, 0.1, 'square', 0.1); }
+  function sfxStart() { tone(440, 0.1, 'sine', 0.14, 0); tone(660, 0.12, 'sine', 0.14, 0.08); }
+  function sfxWarn() { tone(900, 0.09, 'square', 0.1); }
+  function sfxDayEnd() { tone(660, 0.14, 'sine', 0.15, 0); tone(880, 0.16, 'sine', 0.14, 0.12); tone(1100, 0.2, 'sine', 0.12, 0.26); }
+  function sfxCustomerArrive() { tone(760, 0.06, 'sine', 0.08, 0); tone(920, 0.08, 'sine', 0.07, 0.06); }
+  function sfxCustomerSad() { tone(400, 0.12, 'sine', 0.09, 0); tone(320, 0.16, 'sine', 0.08, 0.1); }
+  function sfxHiveUnlock() {
+    tone(523.25, 0.1, 'triangle', 0.15, 0);
+    tone(659.25, 0.1, 'triangle', 0.15, 0.1);
+    tone(783.99, 0.1, 'triangle', 0.15, 0.2);
+    tone(1046.5, 0.22, 'triangle', 0.16, 0.3);
+  }
+
+  // ---------- Background music (soft looping melody) ----------
+  const MUSIC_NOTES = [523.25, 587.33, 659.25, 783.99, 659.25, 587.33, 659.25, 523.25];
+  let musicOn = false, musicIdx = 0, musicTimeoutId = null;
+  function musicTick() {
+    if (!musicOn) return;
+    if (soundOn) tone(MUSIC_NOTES[musicIdx % MUSIC_NOTES.length], 0.42, 'sine', 0.032, 0);
+    musicIdx++;
+    musicTimeoutId = setTimeout(musicTick, 430);
+  }
+  function startMusic() {
+    if (musicOn) return;
+    musicOn = true;
+    musicIdx = 0;
+    musicTick();
+  }
+  function stopMusic() {
+    musicOn = false;
+    if (musicTimeoutId) { clearTimeout(musicTimeoutId); musicTimeoutId = null; }
+  }
+
+  soundToggle.addEventListener('click', () => {
+    soundOn = !soundOn;
+    soundToggle.classList.toggle('muted', !soundOn);
+    try { localStorage.setItem('honeyshop_sound', soundOn ? 'on' : 'off'); } catch (e) {}
+    if (soundOn) { const ac = getAudioCtx(); if (ac && ac.state === 'suspended') ac.resume(); }
+  });
+
+  // ---------- Sprites ----------
+  const sprites = {};
+  const spriteSrcs = {
+    idle: '../../assets/honey-bear-idle.png',
+    walk: '../../assets/honey-bear-walk.png',
+    happy: '../../assets/honey-bear-happy.png',
+    jar: '../../assets/honey-jar.png',
+    bee: '../../assets/honey-bee-angry.png',
+    stand: '../../assets/honey-stand.png',
+    tree: '../../assets/honey-tree.png',
+    comb: '../../assets/honey-raw-comb.png',
+    coin: '../../assets/honey-coin.png',
+    bunny: '../../assets/honey-customer-bunny.png',
+    fox: '../../assets/honey-customer-fox.png',
+  };
+  Object.keys(spriteSrcs).forEach((key) => {
+    const img = new Image();
+    img.src = spriteSrcs[key];
+    sprites[key] = img;
+  });
+  function ready(img) { return img && img.complete && img.naturalWidth; }
+  function drawH(img, cx, footY, targetH, faceX) {
+    if (!ready(img)) return;
+    const w = targetH * (img.naturalWidth / img.naturalHeight);
+    ctx.save();
+    ctx.translate(cx, footY);
+    if (faceX) ctx.scale(faceX, 1);
+    ctx.drawImage(img, -w / 2, -targetH, w, targetH);
+    ctx.restore();
+    return w;
+  }
+  function drawShadow(cx, footY, w) {
+    ctx.save();
+    ctx.fillStyle = 'rgba(40,30,15,0.28)';
+    ctx.beginPath();
+    ctx.ellipse(cx, footY + 4, w * 0.42, w * 0.14, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0) ||
+    (window.matchMedia && window.matchMedia('(hover: none) and (pointer: coarse)').matches);
+  if (isTouch) document.body.classList.add('touch-controls');
+
+  // ---------- World ----------
+  const LW = 1280, LH = 720;
+  const BOUNDS = { minX: 70, maxX: 1210, minY: 190, maxY: 590 };
+
+  const TREE_BASE = { x: 230, y: 430 };
+  const HARVEST_PT = { x: 230, y: 400 };
+  const HARVEST_R = 130;
+
+  const HIVE2_BASE = { x: 620, y: 380 };
+  const HIVE2_PT = { x: 620, y: 355 };
+  const HIVE2_R = 105;
+  const HIVE2_COST = 150;
+  const HIVE2_W = 220, HIVE2_H = 330;
+
+  const STAND_BASE = { x: 1000, y: 430 };
+  const STOCK_PT = { x: 950, y: 400 };
+  const STOCK_R = 140;
+
+  const QUEUE_POS = [
+    { x: 1120, y: 470 },
+    { x: 1160, y: 505 },
+    { x: 1195, y: 540 },
+  ];
+  const CUSTOMER_ENTRY = { x: 1330, y: 580 };
+  const CUSTOMER_EXIT = { x: 1330, y: 600 };
+  const COIN_PILE = { x: 1005, y: 500 };
+  const HUD_COIN_TARGET = { x: 26, y: 26 };
+
+  const STAND_CAPACITY = 6;
+  const JAR_SLOTS = [
+    { x: -78, y: -128 }, { x: -46, y: -134 }, { x: -14, y: -138 },
+    { x: 18, y: -138 }, { x: 50, y: -134 }, { x: 82, y: -128 },
+  ];
+
+  const SPEED_VALS = [180, 200, 220, 245, 270];
+  const SPEED_COSTS = [25, 45, 75, 120];
+  const BASKET_VALS = [3, 5, 7, 10, 14];
+  const BASKET_COSTS = [30, 50, 85, 135];
+  const HARVEST_VALS = [0.75, 0.65, 0.55, 0.45, 0.35];
+  const HARVEST_COSTS = [25, 45, 75, 120];
+  const JAR_PRICE = 5;
+  const HELPER_COST = 200;
+  const HELPER_HARVEST_TIME = 1.3;
+  const HELPER_SPEED = 150;
+
+  const PANELS = [
+    { key: 'speed', label: 'Speed', x: 250, y: 626, w: 180, h: 78, type: 'leveled' },
+    { key: 'basket', label: 'Basket', x: 450, y: 626, w: 180, h: 78, type: 'leveled' },
+    { key: 'harvest', label: 'Harvest', x: 650, y: 626, w: 180, h: 78, type: 'leveled' },
+    { key: 'helper', label: 'Helper Bee', x: 850, y: 626, w: 180, h: 78, type: 'toggle' },
+  ];
+
+  let DPR = 1;
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    const containerW = wrap.clientWidth;
+    const containerH = wrap.clientHeight;
+    const scale = Math.min(containerW / LW, containerH / LH);
+    canvas.style.width = (LW * scale) + 'px';
+    canvas.style.height = (LH * scale) + 'px';
+    canvas.width = LW * DPR;
+    canvas.height = LH * DPR;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+  window.addEventListener('resize', resize);
+
+  // ---------- Decoration (fixed layout) ----------
+  const decor = [];
+  (function seedDecor() {
+    let seed = 7;
+    function rnd() { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; }
+    for (let i = 0; i < 22; i++) {
+      decor.push({ x: 40 + rnd() * (LW - 80), y: 210 + rnd() * 370, s: 0.6 + rnd() * 0.7, kind: rnd() < 0.6 ? 'flower' : (rnd() < 0.5 ? 'stone' : 'bush'), hue: rnd() < 0.5 ? '#fff' : '#ffd35c' });
+    }
+  })();
+
+  // ---------- Persistent progression ----------
+  let coins = 0, day = 1;
+  let lvl = { speed: 0, basket: 0, harvest: 0 };
+  let bestDay = 0, totalSold = 0;
+  let hive2Unlocked = false;
+  let helperBeeUnlocked = false;
+
+  function loadPersist() {
+    try {
+      coins = parseInt(localStorage.getItem('honeyshop_coins'), 10) || 0;
+      day = parseInt(localStorage.getItem('honeyshop_day'), 10) || 1;
+      lvl.speed = parseInt(localStorage.getItem('honeyshop_lvl_speed'), 10) || 0;
+      lvl.basket = parseInt(localStorage.getItem('honeyshop_lvl_basket'), 10) || 0;
+      lvl.harvest = parseInt(localStorage.getItem('honeyshop_lvl_harvest'), 10) || 0;
+      bestDay = parseInt(localStorage.getItem('honeyshop_bestday'), 10) || 0;
+      totalSold = parseInt(localStorage.getItem('honeyshop_totalsold'), 10) || 0;
+      hive2Unlocked = localStorage.getItem('honeyshop_hive2') === '1';
+      helperBeeUnlocked = localStorage.getItem('honeyshop_helper') === '1';
+    } catch (e) {}
+  }
+  function savePersist() {
+    try {
+      localStorage.setItem('honeyshop_coins', String(coins));
+      localStorage.setItem('honeyshop_day', String(day));
+      localStorage.setItem('honeyshop_lvl_speed', String(lvl.speed));
+      localStorage.setItem('honeyshop_lvl_basket', String(lvl.basket));
+      localStorage.setItem('honeyshop_lvl_harvest', String(lvl.harvest));
+      localStorage.setItem('honeyshop_bestday', String(bestDay));
+      localStorage.setItem('honeyshop_totalsold', String(totalSold));
+      localStorage.setItem('honeyshop_hive2', hive2Unlocked ? '1' : '0');
+      localStorage.setItem('honeyshop_helper', helperBeeUnlocked ? '1' : '0');
+    } catch (e) {}
+  }
+  loadPersist();
+  startBtn.textContent = 'Start Day ' + day;
+
+  function currentSpeed() { return SPEED_VALS[lvl.speed]; }
+  function currentCapacity() { return BASKET_VALS[lvl.basket]; }
+  function currentHarvestTime() { return HARVEST_VALS[lvl.harvest]; }
+  function panelVals(key) { return key === 'speed' ? SPEED_VALS : key === 'basket' ? BASKET_VALS : HARVEST_VALS; }
+  function panelCosts(key) { return key === 'speed' ? SPEED_COSTS : key === 'basket' ? BASKET_COSTS : HARVEST_COSTS; }
+
+  // ---------- Session state ----------
+  let running = false, dayOver = true, dayEnding = false;
+  const DAY_LENGTH = 90;
+  let timeLeft = DAY_LENGTH;
+  let warnedLow = false;
+
+  let carried = 0;
+  let standStock = 0;
+  let harvestedToday = 0, stockedToday = 0, soldToday = 0, servedToday = 0, missedToday = 0, coinsToday = 0;
+
+  let bearX = LW / 2, bearY = 420, bearFacing = 1;
+  let walkFrame = 0, walkTimer = 0, bobT = 0;
+  let happyTimer = 0, invuln = 0, hurtFlash = 0;
+  let harvestProgress = 0, harvestFullWarnT = 0, stockFullWarnT = 0, harvestTicked = false;
+  let treeBounceT = 0, hive2BounceT = 0, standPopT = 0;
+  let hive2NeedCoinsWarnT = 0;
+
+  let bees = [];
+  let helperBee = null;
+  let customers = [];
+  let queue = [];
+  let coinDrops = [];
+  let floaters = [];
+  let flyers = []; // honeycomb / misc flying icons between two points
+  let sparkles = [];
+  let elapsedTotal = 0;
+  let nextCustomerT = 2;
+
+  const keys = {};
+  const touchDirs = { up: false, down: false, left: false, right: false };
+
+  function addFloat(x, y, text, color, size) {
+    floaters.push({ x, y, text, color: color || '#4a2e18', life: 1, size: size || 15 });
+  }
+  function addSparkleBurst(x, y, n, color) {
+    for (let i = 0; i < (n || 8); i++) {
+      const a = Math.random() * Math.PI * 2;
+      const sp = 40 + Math.random() * 70;
+      sparkles.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 1, color: color || '#f2b134' });
+    }
+  }
+  function addFlyer(kind, x, y, tx, ty, dur, onDone) {
+    flyers.push({ kind, x, y, x0: x, y0: y, tx, ty, t: 0, dur: dur || 0.35, onDone });
+  }
+
+  // ---------- Difficulty per day ----------
+  function beeCountForDay(d) { return Math.min(4, 2 + Math.floor((d - 1) / 3)); }
+  function beeSpeedMulForDay(d) { return 1 + Math.min(0.35, (d - 1) * 0.03); }
+  function customerIntervalForDay(d) { return Math.max(4, 8 - (d - 1) * 0.5); }
+
+  // ---------- HUD ----------
+  function refreshHud() {
+    hudCoins.textContent = coins;
+    hudDay.textContent = 'Day ' + day;
+  }
+  function refreshTimerHud() {
+    const s = Math.max(0, Math.ceil(timeLeft));
+    const m = Math.floor(s / 60);
+    const r = s % 60;
+    hudTimer.textContent = m + ':' + (r < 10 ? '0' : '') + r;
+    hudTimer.classList.toggle('warn', s <= 10 && running);
+  }
+
+  // ---------- Upgrade panel hit-testing ----------
+  function panelAt(px, py) {
+    for (const p of PANELS) {
+      if (px >= p.x && px <= p.x + p.w && py >= p.y && py <= p.y + p.h) return p;
+    }
+    return null;
+  }
+  function pointerToLogical(clientX, clientY) {
+    const rect = canvas.getBoundingClientRect();
+    return { x: (clientX - rect.left) / rect.width * LW, y: (clientY - rect.top) / rect.height * LH };
+  }
+  canvas.addEventListener('click', (e) => {
+    const p = pointerToLogical(e.clientX, e.clientY);
+    const panel = panelAt(p.x, p.y);
+    if (panel) buyUpgrade(panel.key);
+  });
+  canvas.addEventListener('touchstart', (e) => {
+    const t = e.touches[0];
+    const p = pointerToLogical(t.clientX, t.clientY);
+    const panel = panelAt(p.x, p.y);
+    if (panel) { buyUpgrade(panel.key); e.preventDefault(); }
+  }, { passive: false });
+
+  function buyUpgrade(key) {
+    if (!running) return;
+    const panel = PANELS.find(p => p.key === key);
+    if (key === 'helper') {
+      if (helperBeeUnlocked) return;
+      if (coins < HELPER_COST) { sfxDenied(); return; }
+      coins -= HELPER_COST;
+      helperBeeUnlocked = true;
+      resetHelperBee();
+      savePersist();
+      sfxUpgrade();
+      refreshHud();
+      addFloat(panel.x + 90, panel.y - 6, 'HIRED!', '#4caf6b', 16);
+      addSparkleBurst(panel.x + 90, panel.y + 30, 14, '#f2b134');
+      return;
+    }
+    const idx = lvl[key];
+    const costs = panelCosts(key);
+    if (idx >= panelVals(key).length - 1) return;
+    const cost = costs[idx];
+    if (coins < cost) { sfxDenied(); return; }
+    coins -= cost;
+    lvl[key]++;
+    savePersist();
+    sfxUpgrade();
+    refreshHud();
+    addFloat(panel.x + 90, panel.y - 6, 'LEVEL UP!', '#4caf6b', 16);
+    addSparkleBurst(panel.x + 90, panel.y + 30, 14, '#f2b134');
+    if (key === 'speed') pulseBear();
+    if (key === 'basket') pulseTarget = 'basket';
+    if (key === 'harvest') pulseTarget = 'harvest';
+  }
+  let pulseT = 0, pulseTarget = null;
+  function pulseBear() { pulseT = 0.4; pulseTarget = 'bear'; }
+
+  // ---------- Reset / start ----------
+  function resetDaySession() {
+    timeLeft = DAY_LENGTH;
+    warnedLow = false;
+    dayEnding = false;
+    carried = 0;
+    standStock = 0;
+    harvestedToday = 0; stockedToday = 0; soldToday = 0; servedToday = 0; missedToday = 0; coinsToday = 0;
+    bearX = LW / 2; bearY = 420; bearFacing = 1;
+    happyTimer = 0; invuln = 0; hurtFlash = 0;
+    harvestProgress = 0; harvestFullWarnT = 0; stockFullWarnT = 0; harvestTicked = false;
+    treeBounceT = 0; hive2BounceT = 0; standPopT = 0; hive2NeedCoinsWarnT = 0;
+    floaters = []; flyers = []; sparkles = []; coinDrops = [];
+    customers = []; queue = [];
+    nextCustomerT = 2;
+    elapsedTotal = 0;
+
+    const n = beeCountForDay(day);
+    const mul = beeSpeedMulForDay(day);
+    bees = [];
+    for (let i = 0; i < n; i++) {
+      bees.push({
+        center: TREE_BASE,
+        angle: (i / n) * Math.PI * 2,
+        rx: 80 + (i % 2) * 30, ry: 46 + (i % 3) * 10,
+        speed: (0.7 + i * 0.15) * mul,
+        dir: i % 2 === 0 ? 1 : -1,
+        phase: Math.random() * Math.PI * 2,
+      });
+    }
+    if (hive2Unlocked) {
+      bees.push({
+        center: HIVE2_BASE,
+        angle: Math.random() * Math.PI * 2,
+        rx: 60, ry: 40,
+        speed: 0.8 * mul,
+        dir: 1,
+        phase: Math.random() * Math.PI * 2,
+      });
+    }
+    resetHelperBee();
+    refreshHud();
+    refreshTimerHud();
+  }
+
+  function resetHelperBee() {
+    if (!helperBeeUnlocked) { helperBee = null; return; }
+    helperBee = { x: TREE_BASE.x, y: TREE_BASE.y - 60, state: 'toHive', t: 0, carrying: false };
+  }
+
+  function updateHelperBee(dt) {
+    if (!helperBee || !running) return;
+    if (helperBee.state === 'toHive') {
+      const tx = TREE_BASE.x + 15, ty = TREE_BASE.y - 70;
+      const dx = tx - helperBee.x, dy = ty - helperBee.y;
+      const d = Math.hypot(dx, dy);
+      if (d < 8) { helperBee.state = 'harvesting'; helperBee.t = 0; }
+      else { helperBee.x += (dx / d) * HELPER_SPEED * dt; helperBee.y += (dy / d) * HELPER_SPEED * dt; }
+    } else if (helperBee.state === 'harvesting') {
+      helperBee.t += dt;
+      if (helperBee.t >= HELPER_HARVEST_TIME) {
+        helperBee.state = 'toStand';
+        helperBee.carrying = true;
+        harvestedToday++;
+      }
+    } else if (helperBee.state === 'toStand') {
+      const tx = STAND_BASE.x, ty = STAND_BASE.y - 100;
+      const dx = tx - helperBee.x, dy = ty - helperBee.y;
+      const d = Math.hypot(dx, dy);
+      if (d < 8) {
+        if (standStock < STAND_CAPACITY) {
+          standStock++;
+          stockedToday++;
+          helperBee.carrying = false;
+          sfxHelperStock();
+          addSparkleBurst(tx, ty, 4, '#fff3d6');
+          helperBee.state = 'toHive';
+        }
+      } else { helperBee.x += (dx / d) * HELPER_SPEED * dt; helperBee.y += (dy / d) * HELPER_SPEED * dt; }
+    }
+  }
+
+  function startGame() {
+    resize();
+    resetDaySession();
+    overlay.classList.remove('show');
+    startScreen.classList.remove('show');
+    running = true;
+    dayOver = false;
+    lastTime = performance.now();
+    sfxStart();
+    startMusic();
+    requestAnimationFrame(loop);
+  }
+
+  // ---------- Input ----------
+  window.addEventListener('keydown', (e) => {
+    const k = e.key.toLowerCase();
+    if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd'].includes(k)) { keys[k] = true; e.preventDefault(); }
+  });
+  window.addEventListener('keyup', (e) => {
+    const k = e.key.toLowerCase();
+    keys[k] = false;
+  });
+
+  dpad.querySelectorAll('button').forEach((btn) => {
+    const dir = btn.dataset.dir;
+    const on = (e) => { touchDirs[dir] = true; if (e) e.preventDefault(); };
+    const off = (e) => { touchDirs[dir] = false; if (e) e.preventDefault(); };
+    btn.addEventListener('touchstart', on, { passive: false });
+    btn.addEventListener('touchend', off, { passive: false });
+    btn.addEventListener('touchcancel', off, { passive: false });
+    btn.addEventListener('mousedown', on);
+    btn.addEventListener('mouseup', off);
+    btn.addEventListener('mouseleave', off);
+  });
+
+  function nearHarvest() { return Math.hypot(bearX - HARVEST_PT.x, bearY - HARVEST_PT.y) < HARVEST_R; }
+  function nearHive2() { return Math.hypot(bearX - HIVE2_PT.x, bearY - HIVE2_PT.y) < HIVE2_R; }
+  function nearStock() { return Math.hypot(bearX - STOCK_PT.x, bearY - STOCK_PT.y) < STOCK_R; }
+
+  function activeHarvestSource() {
+    if (nearHarvest()) return { bounce: 'tree', originX: TREE_BASE.x + 20, originY: TREE_BASE.y - 190 };
+    if (hive2Unlocked && nearHive2()) return { bounce: 'hive2', originX: HIVE2_BASE.x + 15, originY: HIVE2_BASE.y - 140 };
+    return null;
+  }
+
+  function objectiveTarget() {
+    let nearestCoin = null, nearestD = Infinity;
+    for (const cd of coinDrops) {
+      if (cd.settled && !cd.flying) {
+        const d = Math.hypot(bearX - cd.x, bearY - cd.y);
+        if (d < nearestD) { nearestD = d; nearestCoin = cd; }
+      }
+    }
+    if (nearestCoin && nearestD > 56) return { x: nearestCoin.x, y: nearestCoin.y };
+    if (carried > 0 && !nearStock()) return { x: STOCK_PT.x, y: STOCK_PT.y };
+    if (carried < currentCapacity() && !activeHarvestSource()) {
+      if (hive2Unlocked) {
+        const d1 = Math.hypot(bearX - HARVEST_PT.x, bearY - HARVEST_PT.y);
+        const d2 = Math.hypot(bearX - HIVE2_PT.x, bearY - HIVE2_PT.y);
+        return d2 < d1 ? { x: HIVE2_PT.x, y: HIVE2_PT.y } : { x: HARVEST_PT.x, y: HARVEST_PT.y };
+      }
+      return { x: HARVEST_PT.x, y: HARVEST_PT.y };
+    }
+    return null;
+  }
+
+  function drawObjectiveArrow() {
+    if (!running) return;
+    const t = objectiveTarget();
+    if (!t) return;
+    const dx = t.x - bearX, dy = t.y - bearY;
+    const dist = Math.hypot(dx, dy);
+    if (dist < 30) return;
+    const angle = Math.atan2(dy, dx);
+    const bob = Math.sin(elapsedTotal * 4) * 4;
+    ctx.save();
+    ctx.translate(bearX, bearY - 195 + bob);
+    ctx.rotate(angle);
+    ctx.fillStyle = '#fff3d6';
+    ctx.strokeStyle = '#4a2e18';
+    ctx.lineWidth = 2;
+    ctx.shadowColor = 'rgba(242,177,52,0.6)';
+    ctx.shadowBlur = 6;
+    ctx.beginPath();
+    ctx.moveTo(15, 0);
+    ctx.lineTo(-6, -9);
+    ctx.lineTo(-1, 0);
+    ctx.lineTo(-6, 9);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // ---------- Harvest / stock logic ----------
+  function harvestSlotOffset(index) {
+    const row = Math.floor(index / 4), col = index % 4;
+    return { x: -18 + col * 12, y: -6 - row * 12 };
+  }
+
+  function completeHarvest(src) {
+    carried++;
+    harvestedToday++;
+    if (src.bounce === 'hive2') hive2BounceT = 0.28; else treeBounceT = 0.28;
+    happyTimer = 0.35;
+    sfxHarvestDone();
+    addSparkleBurst(src.originX, src.originY, 7, '#f2b134');
+    addFlyer('comb', src.originX, src.originY, bearX, bearY, 0.32, null);
+    addFloat(bearX, bearY - 150, '+1', '#f2b134', 15);
+  }
+
+  function completeStockOne() {
+    carried--;
+    standStock++;
+    stockedToday++;
+    standPopT = 0.25;
+    sfxStock();
+    addFlyer('comb', bearX, bearY - 60, STAND_BASE.x, STAND_BASE.y - 150, 0.28, null);
+    addSparkleBurst(STAND_BASE.x, STAND_BASE.y - 150, 5, '#fff3d6');
+  }
+
+  function spawnSaleCoins(x, y) {
+    for (let i = 0; i < JAR_PRICE; i++) {
+      coinDrops.push({
+        x: x + (Math.random() - 0.5) * 20,
+        y: y,
+        vx: (Math.random() - 0.5) * 90,
+        vy: -(180 + Math.random() * 90),
+        settled: false, flying: false, collected: false,
+        groundY: COIN_PILE.y + (Math.random() - 0.5) * 24 + (i % 3) * 4,
+      });
+    }
+  }
+
+  // ---------- Update ----------
+  function triggerDayEnd() {
+    if (dayOver) return;
+    dayOver = true;
+    running = false;
+    stopMusic();
+    const playedDay = day;
+    const isNewBest = coinsToday > 0 && coinsToday > bestDay;
+    if (isNewBest) bestDay = coinsToday;
+    totalSold += soldToday;
+    day++;
+    savePersist();
+
+    overlayTitle.textContent = 'Day ' + playedDay + ' Complete!';
+    overlayBadge.innerHTML = isNewBest ? '<span class="newbest">NEW BEST DAY!</span>' : '';
+    dayStats.innerHTML =
+      row('Honeycomb harvested', harvestedToday) +
+      row('Jars stocked', stockedToday) +
+      row('Jars sold', soldToday) +
+      row('Customers served', servedToday) +
+      row('Customers missed', missedToday) +
+      row('Coins earned today', coinsToday) +
+      row('Best day', bestDay);
+    retryBtn.textContent = 'Start Day ' + day;
+    overlay.classList.add('show');
+    sfxDayEnd();
+  }
+  function row(label, val) { return '<tr><td>' + label + '</td><td>' + val + '</td></tr>'; }
+
+  function update(dt) {
+    elapsedTotal += dt;
+
+    if (running && !dayEnding) {
+      timeLeft -= dt;
+      refreshTimerHud();
+      if (timeLeft <= 10 && !warnedLow) { warnedLow = true; }
+      if (Math.ceil(timeLeft) === 10 && timeLeft > 9.85) sfxWarn();
+      if (timeLeft <= 0) {
+        timeLeft = 0;
+        dayEnding = true;
+      }
+    }
+
+    // movement
+    let mx = 0, my = 0;
+    if (keys.arrowleft || keys.a || touchDirs.left) mx -= 1;
+    if (keys.arrowright || keys.d || touchDirs.right) mx += 1;
+    if (keys.arrowup || keys.w || touchDirs.up) my -= 1;
+    if (keys.arrowdown || keys.s || touchDirs.down) my += 1;
+    const isMoving = mx !== 0 || my !== 0;
+    if (isMoving) {
+      const len = Math.hypot(mx, my);
+      mx /= len; my /= len;
+      const sp = currentSpeed();
+      bearX = Math.min(BOUNDS.maxX, Math.max(BOUNDS.minX, bearX + mx * sp * dt));
+      bearY = Math.min(BOUNDS.maxY, Math.max(BOUNDS.minY, bearY + my * sp * dt));
+      if (mx !== 0) bearFacing = mx > 0 ? 1 : -1;
+      walkTimer += dt;
+      if (walkTimer > 0.18) { walkTimer = 0; walkFrame = 1 - walkFrame; }
+      bobT += dt * 9;
+    } else {
+      walkFrame = 0;
+    }
+
+    if (happyTimer > 0) happyTimer -= dt;
+    if (invuln > 0) invuln -= dt;
+    if (hurtFlash > 0) hurtFlash -= dt;
+    if (treeBounceT > 0) treeBounceT -= dt;
+    if (hive2BounceT > 0) hive2BounceT -= dt;
+    if (standPopT > 0) standPopT -= dt;
+    if (harvestFullWarnT > 0) harvestFullWarnT -= dt;
+    if (stockFullWarnT > 0) stockFullWarnT -= dt;
+    if (hive2NeedCoinsWarnT > 0) hive2NeedCoinsWarnT -= dt;
+    if (pulseT > 0) pulseT -= dt;
+
+    // hive 2 unlock
+    if (running && !hive2Unlocked && nearHive2()) {
+      if (coins >= HIVE2_COST) {
+        coins -= HIVE2_COST;
+        hive2Unlocked = true;
+        savePersist();
+        bees.push({
+          center: HIVE2_BASE,
+          angle: Math.random() * Math.PI * 2,
+          rx: 60, ry: 40,
+          speed: 0.8 * beeSpeedMulForDay(day),
+          dir: 1,
+          phase: Math.random() * Math.PI * 2,
+        });
+        addSparkleBurst(HIVE2_BASE.x, HIVE2_BASE.y - 150, 16, '#f2b134');
+        addFloat(HIVE2_BASE.x, HIVE2_BASE.y - 280, 'New Hive Unlocked!', '#4caf6b', 17);
+        sfxHiveUnlock();
+        refreshHud();
+      } else if (hive2NeedCoinsWarnT <= 0) {
+        hive2NeedCoinsWarnT = 1.5;
+        addFloat(HIVE2_BASE.x, HIVE2_BASE.y - 260, 'Need ' + (HIVE2_COST - coins) + ' more coins', '#ff6f59', 14);
+      }
+    }
+
+    // harvesting
+    const harvestSrc = running ? activeHarvestSource() : null;
+    if (harvestSrc) {
+      if (carried < currentCapacity()) {
+        harvestProgress += dt / currentHarvestTime();
+        if (!harvestTicked && harvestProgress >= 0.5) {
+          harvestTicked = true;
+          sfxHarvestTick();
+        }
+        if (harvestProgress >= 1) {
+          harvestProgress = 0;
+          harvestTicked = false;
+          completeHarvest(harvestSrc);
+        }
+      } else if (harvestFullWarnT <= 0) {
+        harvestFullWarnT = 1.1;
+        addFloat(bearX, bearY - 150, 'BASKET FULL', '#ff6f59', 14);
+      }
+    } else {
+      harvestProgress = 0;
+      harvestTicked = false;
+    }
+
+    // auto-stocking
+    if (running) {
+      if (nearStock() && carried > 0) {
+        if (standStock < STAND_CAPACITY) {
+          stockTimer = (stockTimer || 0) + dt;
+          if (stockTimer >= 0.13) {
+            stockTimer = 0;
+            completeStockOne();
+          }
+        } else if (stockFullWarnT <= 0) {
+          stockFullWarnT = 1.1;
+          addFloat(bearX, bearY - 150, 'STAND FULL', '#ff6f59', 14);
+        }
+      } else {
+        stockTimer = 0;
+      }
+    }
+
+    // bees
+    for (const b of bees) {
+      const spd = b.speed * (1 + 0.15 * Math.sin(elapsedTotal * 1.3 + b.phase));
+      b.angle += b.dir * spd * dt;
+      const center = b.center || TREE_BASE;
+      b.x = center.x + Math.cos(b.angle) * b.rx;
+      b.y = center.y - 90 + Math.sin(b.angle) * b.ry;
+      if (running && invuln <= 0) {
+        const d = Math.hypot(bearX - b.x, bearY - (b.y + 20));
+        if (d < 44) {
+          invuln = 1.0;
+          hurtFlash = 0.3;
+          sfxSting();
+          const push = Math.max(1, d);
+          bearX = Math.min(BOUNDS.maxX, Math.max(BOUNDS.minX, bearX + ((bearX - b.x) / push) * 34));
+          bearY = Math.min(BOUNDS.maxY, Math.max(BOUNDS.minY, bearY + ((bearY - b.y) / push) * 34));
+          if (carried > 0) {
+            carried--;
+            addFloat(bearX, bearY - 150, '-1', '#ff6f59', 15);
+          }
+        }
+      }
+    }
+
+    updateHelperBee(dt);
+
+    // customers
+    if (running && !dayEnding && queue.length < 3) {
+      nextCustomerT -= dt;
+      if (nextCustomerT <= 0) {
+        const qi = queue.length;
+        const c = {
+          type: Math.random() < 0.5 ? 'bunny' : 'fox',
+          x: CUSTOMER_ENTRY.x, y: CUSTOMER_ENTRY.y,
+          state: 'entering', queueIndex: qi, patience: 4,
+          wob: Math.random() * Math.PI * 2, jitter: (Math.random() - 0.5) * 26,
+        };
+        customers.push(c);
+        queue.push(c);
+        nextCustomerT = customerIntervalForDay(day) + (Math.random() - 0.5) * 1.5;
+        sfxCustomerArrive();
+      }
+    }
+
+    for (let i = customers.length - 1; i >= 0; i--) {
+      const c = customers[i];
+      const target = c.state === 'leaving' ? CUSTOMER_EXIT : QUEUE_POS[c.queueIndex];
+      if (c.state === 'entering' || c.state === 'queue') {
+        const dx = target.x - c.x, dy = target.y - c.y;
+        const d = Math.hypot(dx, dy);
+        if (d > 4) {
+          const sp = 130;
+          c.x += (dx / d) * sp * dt;
+          c.y += (dy / d) * sp * dt + Math.sin(c.wob + elapsedTotal * 2) * 4 * dt;
+        } else if (c.state === 'entering') {
+          c.state = 'queue';
+          c.patience = 4;
+        }
+        if (c.state === 'queue' && c.queueIndex === 0) {
+          if (standStock > 0) {
+            standStock--;
+            soldToday++; servedToday++;
+            spawnSaleCoins(STAND_BASE.x, STAND_BASE.y - 60);
+            sfxSell();
+            addFloat(c.x, c.y - 120, 'Sold!', '#4caf6b', 14);
+            c.state = 'leaving'; c.happy = true;
+            queue.splice(0, 1);
+            for (const other of queue) other.queueIndex--;
+          } else {
+            c.patience -= dt;
+            if (c.patience <= 0) {
+              c.state = 'leaving'; c.happy = false;
+              missedToday++;
+              queue.splice(0, 1);
+              for (const other of queue) other.queueIndex--;
+              sfxCustomerSad();
+            }
+          }
+        }
+      } else if (c.state === 'leaving') {
+        const dx = CUSTOMER_EXIT.x - c.x;
+        c.x += Math.max(90, 130) * dt * (dx >= 0 ? 1 : -1);
+        if (c.x > CUSTOMER_EXIT.x - 5) customers.splice(i, 1);
+      }
+    }
+
+    if (dayEnding) {
+      const stillBusy = customers.some((c) => c.state === 'queue' && c.queueIndex === 0 && standStock > 0);
+      if (!stillBusy) triggerDayEnd();
+    }
+
+    // coin drops physics + collection
+    for (let i = coinDrops.length - 1; i >= 0; i--) {
+      const cd = coinDrops[i];
+      if (cd.flying) {
+        cd.flyT += dt / 0.4;
+        if (cd.flyT >= 1) {
+          coins += 1; coinsToday += 1;
+          savePersist();
+          refreshHud();
+          sfxCoin();
+          coinDrops.splice(i, 1);
+          continue;
+        }
+        cd.x = cd.fx0 + (HUD_COIN_TARGET.x - cd.fx0) * cd.flyT;
+        cd.y = cd.fy0 + (HUD_COIN_TARGET.y - cd.fy0) * cd.flyT;
+      } else if (!cd.settled) {
+        cd.vy += 700 * dt;
+        cd.x += cd.vx * dt;
+        cd.y += cd.vy * dt;
+        if (cd.y >= cd.groundY) { cd.y = cd.groundY; cd.vy = 0; cd.vx = 0; cd.settled = true; }
+      } else if (running) {
+        const d = Math.hypot(bearX - cd.x, bearY - cd.y);
+        if (d < 56) { cd.flying = true; cd.flyT = 0; cd.fx0 = cd.x; cd.fy0 = cd.y; }
+      }
+    }
+
+    // flyers
+    for (let i = flyers.length - 1; i >= 0; i--) {
+      const f = flyers[i];
+      f.t += dt / f.dur;
+      if (f.t >= 1) { flyers.splice(i, 1); continue; }
+      f.x = f.x0 + (f.tx - f.x0) * f.t;
+      f.y = f.y0 + (f.ty - f.y0) * f.t - Math.sin(f.t * Math.PI) * 40;
+    }
+
+    // sparkles
+    for (let i = sparkles.length - 1; i >= 0; i--) {
+      const s = sparkles[i];
+      s.x += s.vx * dt; s.y += s.vy * dt;
+      s.vy += 220 * dt;
+      s.life -= dt * 1.6;
+      if (s.life <= 0) sparkles.splice(i, 1);
+    }
+
+    // floaters
+    for (let i = floaters.length - 1; i >= 0; i--) {
+      floaters[i].y -= dt * 34;
+      floaters[i].life -= dt * 0.9;
+      if (floaters[i].life <= 0) floaters.splice(i, 1);
+    }
+  }
+  let stockTimer = 0;
+
+  // ---------- Draw ----------
+  function drawBackdrop() {
+    const sky = ctx.createLinearGradient(0, 0, 0, 190);
+    sky.addColorStop(0, '#7fd8ff');
+    sky.addColorStop(1, '#bfeaff');
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, LW, 190);
+    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+    [[150, 55, 1], [520, 40, 0.8], [900, 65, 0.9], [1150, 38, 0.6]].forEach(([cx, cy, s]) => {
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, 32 * s, 15 * s, 0, 0, Math.PI * 2);
+      ctx.ellipse(cx - 22 * s, cy + 3 * s, 19 * s, 12 * s, 0, 0, Math.PI * 2);
+      ctx.ellipse(cx + 22 * s, cy + 3 * s, 21 * s, 13 * s, 0, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    const outer = ctx.createLinearGradient(0, 170, 0, LH);
+    outer.addColorStop(0, '#8fca63');
+    outer.addColorStop(1, '#6fae4c');
+    ctx.fillStyle = outer;
+    ctx.fillRect(0, 170, LW, LH - 170);
+
+    const inner = ctx.createLinearGradient(0, 190, 0, 640);
+    inner.addColorStop(0, '#bfe98f');
+    inner.addColorStop(1, '#a3dd78');
+    ctx.fillStyle = inner;
+    ctx.beginPath();
+    ctx.roundRect(50, 190, LW - 100, 460, 40);
+    ctx.fill();
+
+    for (const d of decor) drawDecor(d);
+  }
+
+  function drawDecor(d) {
+    ctx.save();
+    ctx.translate(d.x, d.y);
+    ctx.scale(d.s, d.s);
+    if (d.kind === 'flower') {
+      ctx.fillStyle = d.hue;
+      for (let i = 0; i < 5; i++) {
+        ctx.beginPath();
+        ctx.ellipse(Math.cos((i / 5) * Math.PI * 2) * 5, Math.sin((i / 5) * Math.PI * 2) * 5, 4, 3, (i / 5) * Math.PI * 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.fillStyle = '#f2b134';
+      ctx.beginPath(); ctx.arc(0, 0, 3, 0, Math.PI * 2); ctx.fill();
+    } else if (d.kind === 'stone') {
+      ctx.fillStyle = '#c9c2a8';
+      ctx.beginPath(); ctx.ellipse(0, 0, 10, 6, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.35)';
+      ctx.beginPath(); ctx.ellipse(-3, -2, 3, 1.6, 0, 0, Math.PI * 2); ctx.fill();
+    } else {
+      ctx.fillStyle = '#5f9a44';
+      ctx.beginPath(); ctx.ellipse(0, 0, 14, 10, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#6fae4c';
+      ctx.beginPath(); ctx.ellipse(-6, -4, 9, 7, 0, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawTree() {
+    const bounce = treeBounceT > 0 ? 1 + 0.05 * Math.sin((0.28 - treeBounceT) / 0.28 * Math.PI) : 1;
+    const w = 300, h = 450;
+    ctx.save();
+    ctx.translate(TREE_BASE.x, TREE_BASE.y);
+    ctx.scale(bounce, bounce);
+    if (ready(sprites.tree)) ctx.drawImage(sprites.tree, -w / 2, -h, w, h);
+    ctx.restore();
+    drawShadow(TREE_BASE.x, TREE_BASE.y, 150);
+  }
+
+  function drawHive2() {
+    const bounce = hive2BounceT > 0 ? 1 + 0.05 * Math.sin((0.28 - hive2BounceT) / 0.28 * Math.PI) : 1;
+    ctx.save();
+    ctx.translate(HIVE2_BASE.x, HIVE2_BASE.y);
+    ctx.scale(bounce, bounce);
+    if (!hive2Unlocked) {
+      ctx.globalAlpha = 0.55;
+      ctx.filter = 'grayscale(1) brightness(0.8)';
+    }
+    if (ready(sprites.tree)) ctx.drawImage(sprites.tree, -HIVE2_W / 2, -HIVE2_H, HIVE2_W, HIVE2_H);
+    ctx.restore();
+    drawShadow(HIVE2_BASE.x, HIVE2_BASE.y, HIVE2_W * 0.55);
+  }
+
+  function drawHarvestZone() {
+    const active = nearHarvest();
+    const harvestPulse = pulseT > 0 && pulseTarget === 'harvest';
+    ctx.save();
+    ctx.strokeStyle = harvestPulse ? '#4caf6b' : (active ? 'rgba(255,111,89,0.6)' : 'rgba(74,46,24,0.2)');
+    ctx.lineWidth = harvestPulse ? 4 + Math.sin((0.4 - pulseT) / 0.4 * Math.PI) * 2 : (active ? 3 : 2);
+    ctx.setLineDash([7, 7]);
+    ctx.beginPath();
+    ctx.ellipse(HARVEST_PT.x, HARVEST_PT.y + 55, HARVEST_R, HARVEST_R * 0.42, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  function drawHive2Zone() {
+    const active = nearHive2();
+    ctx.save();
+    ctx.strokeStyle = active ? 'rgba(255,111,89,0.6)' : 'rgba(74,46,24,0.2)';
+    ctx.lineWidth = active ? 3 : 2;
+    ctx.setLineDash([7, 7]);
+    ctx.beginPath();
+    ctx.ellipse(HIVE2_PT.x, HIVE2_PT.y + 45, HIVE2_R, HIVE2_R * 0.42, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+
+    if (!hive2Unlocked) {
+      const signX = HIVE2_BASE.x, signY = HIVE2_BASE.y - 245;
+      ctx.save();
+      ctx.fillStyle = '#a06a35';
+      ctx.strokeStyle = '#5c3a1e';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.roundRect(signX - 60, signY - 26, 120, 52, 8);
+      ctx.fill(); ctx.stroke();
+
+      ctx.strokeStyle = '#fff3d6';
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.arc(signX - 34, signY - 6, 7, Math.PI, 0);
+      ctx.stroke();
+      ctx.fillStyle = '#fff3d6';
+      ctx.beginPath();
+      ctx.roundRect(signX - 43, signY - 6, 18, 14, 2);
+      ctx.fill();
+
+      if (ready(sprites.coin)) ctx.drawImage(sprites.coin, signX - 12, signY - 12, 20, 20);
+      ctx.font = '800 13px -apple-system, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#fff3d6';
+      ctx.fillText(String(HIVE2_COST), signX + 10, signY + 5);
+
+      ctx.font = '700 10px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#f2e3c6';
+      ctx.fillText('New Hive', signX, signY + 20);
+      ctx.restore();
+    }
+  }
+
+  function drawHarvestProgressRing() {
+    if (!running || !activeHarvestSource() || carried >= currentCapacity()) return;
+    ctx.save();
+    const r = 24;
+    ctx.translate(bearX, bearY - 175);
+    ctx.strokeStyle = 'rgba(74,46,24,0.25)';
+    ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.stroke();
+    ctx.strokeStyle = '#ff6f59';
+    ctx.beginPath();
+    ctx.arc(0, 0, r, -Math.PI / 2, -Math.PI / 2 + harvestProgress * Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawStandZone() {
+    const active = nearStock();
+    ctx.save();
+    ctx.strokeStyle = active ? 'rgba(255,111,89,0.6)' : 'rgba(74,46,24,0.2)';
+    ctx.lineWidth = active ? 3 : 2;
+    ctx.setLineDash([7, 7]);
+    ctx.beginPath();
+    ctx.ellipse(STOCK_PT.x, STOCK_PT.y + 55, STOCK_R, STOCK_R * 0.4, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  function drawStand() {
+    const pop = standPopT > 0 ? 1 + 0.08 * (standPopT / 0.25) : 1;
+    const w = 400, h = 200;
+    ctx.save();
+    ctx.translate(STAND_BASE.x, STAND_BASE.y);
+    ctx.scale(pop, pop);
+    if (ready(sprites.stand)) ctx.drawImage(sprites.stand, -w / 2, -h, w, h);
+    ctx.restore();
+    drawShadow(STAND_BASE.x, STAND_BASE.y, 220);
+
+    for (let i = 0; i < Math.min(standStock, STAND_CAPACITY); i++) {
+      const slot = JAR_SLOTS[i];
+      if (ready(sprites.jar)) ctx.drawImage(sprites.jar, STAND_BASE.x + slot.x - 20, STAND_BASE.y + slot.y - 20, 40, 40);
+    }
+  }
+
+  function drawBees() {
+    for (const b of bees) {
+      if (!ready(sprites.bee)) continue;
+      ctx.save();
+      ctx.translate(b.x, b.y);
+      ctx.rotate(Math.sin(b.angle * 3) * 0.2);
+      ctx.drawImage(sprites.bee, -25, -25, 50, 50);
+      ctx.restore();
+    }
+  }
+
+  function drawHelperBee() {
+    if (!helperBee || !ready(sprites.bee)) return;
+    const bob = Math.sin(elapsedTotal * 7) * 3;
+    ctx.save();
+    ctx.translate(helperBee.x, helperBee.y + bob);
+    ctx.filter = 'hue-rotate(95deg) saturate(1.4) brightness(1.05)';
+    ctx.drawImage(sprites.bee, -18, -18, 36, 36);
+    ctx.restore();
+    if (helperBee.carrying && ready(sprites.comb)) {
+      ctx.drawImage(sprites.comb, helperBee.x - 9, helperBee.y + bob - 30, 18, 18);
+    }
+  }
+
+  function drawCoinDrops() {
+    for (const cd of coinDrops) {
+      if (!ready(sprites.coin)) continue;
+      const s = cd.flying ? 16 : 18;
+      ctx.drawImage(sprites.coin, cd.x - s / 2, cd.y - s / 2, s, s);
+    }
+  }
+
+  function drawCustomerBubble(c) {
+    if (c.state !== 'queue' || c.queueIndex !== 0) return;
+    const bx = c.x, by = c.y - 148;
+    ctx.save();
+    ctx.fillStyle = '#fff9ec';
+    ctx.strokeStyle = 'rgba(74,46,24,0.3)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.roundRect(bx - 22, by - 22, 44, 32, 8);
+    ctx.fill(); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(bx - 6, by + 10); ctx.lineTo(bx, by + 20); ctx.lineTo(bx + 6, by + 10);
+    ctx.fill();
+    if (ready(sprites.jar)) ctx.drawImage(sprites.jar, bx - 12, by - 16, 24, 24);
+    ctx.restore();
+
+    const pct = Math.max(0, c.patience / 4);
+    ctx.save();
+    ctx.fillStyle = 'rgba(74,46,24,0.2)';
+    ctx.fillRect(bx - 20, by + 16, 40, 5);
+    ctx.fillStyle = pct > 0.4 ? '#4caf6b' : '#ff6f59';
+    ctx.fillRect(bx - 20, by + 16, 40 * pct, 5);
+    ctx.restore();
+  }
+
+  function drawCustomer(c) {
+    const img = c.type === 'bunny' ? sprites.bunny : sprites.fox;
+    drawShadow(c.x, c.y, 70);
+    drawH(img, c.x, c.y, 115);
+    drawCustomerBubble(c);
+  }
+
+  function drawBear() {
+    const tilt = (keys.arrowleft || keys.a || touchDirs.left || keys.arrowright || keys.d || touchDirs.right) ? bearFacing * 0.03 : 0;
+    let img = sprites.idle;
+    if (happyTimer > 0) img = sprites.happy;
+    else if (walkFrame === 1) img = sprites.walk;
+
+    drawShadow(bearX, bearY, 130);
+
+    ctx.save();
+    ctx.translate(bearX, bearY - Math.abs(Math.sin(bobT)) * 2.5);
+    ctx.rotate(tilt);
+    if (pulseT > 0 && pulseTarget === 'bear') {
+      const s = 1 + 0.1 * Math.sin((0.4 - pulseT) / 0.4 * Math.PI);
+      ctx.scale(s, s);
+    }
+    if (invuln > 0) ctx.globalAlpha = 0.5 + 0.5 * Math.sin(performance.now() / 45);
+    ctx.scale(bearFacing, 1);
+    if (ready(img)) {
+      const h = 130, w = h * (img.naturalWidth / img.naturalHeight);
+      ctx.drawImage(img, -w / 2, -h, w, h);
+    }
+    ctx.restore();
+
+    if (carried > 0) {
+      for (let i = 0; i < carried; i++) {
+        const off = harvestSlotOffset(i);
+        if (ready(sprites.comb)) ctx.drawImage(sprites.comb, bearX + off.x - 12, bearY - 150 + off.y - 12, 24, 24);
+      }
+      const capPulse = (pulseT > 0 && pulseTarget === 'basket') ? (1 + 0.3 * Math.sin((0.4 - pulseT) / 0.4 * Math.PI)) : 1;
+      ctx.save();
+      ctx.translate(bearX + 34, bearY - 148);
+      ctx.scale(capPulse, capPulse);
+      ctx.font = '700 12px -apple-system, sans-serif';
+      ctx.fillStyle = '#4a2e18';
+      ctx.textAlign = 'left';
+      ctx.fillText(carried + '/' + currentCapacity(), 0, 0);
+      ctx.restore();
+    }
+  }
+
+  function drawFlyers() {
+    for (const f of flyers) {
+      if (f.kind === 'comb' && ready(sprites.comb)) {
+        ctx.drawImage(sprites.comb, f.x - 12, f.y - 12, 24, 24);
+      }
+    }
+  }
+
+  function drawSparkles() {
+    for (const s of sparkles) {
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, s.life);
+      ctx.fillStyle = s.color;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  function drawFloaters() {
+    ctx.textAlign = 'center';
+    for (const f of floaters) {
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, f.life);
+      ctx.font = '800 ' + f.size + 'px -apple-system, sans-serif';
+      ctx.fillStyle = f.color;
+      ctx.fillText(f.text, f.x, f.y);
+      ctx.restore();
+    }
+  }
+
+  function drawUpgradePanels() {
+    PANELS.forEach((p) => {
+      const isToggle = p.type === 'toggle';
+      const maxed = isToggle ? helperBeeUnlocked : (lvl[p.key] >= panelVals(p.key).length - 1);
+      const cost = isToggle ? HELPER_COST : (maxed ? null : panelCosts(p.key)[lvl[p.key]]);
+      const affordable = !maxed && coins >= cost;
+
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      const grad = ctx.createLinearGradient(0, 0, 0, p.h);
+      grad.addColorStop(0, '#c99259');
+      grad.addColorStop(1, '#a06a35');
+      ctx.fillStyle = grad;
+      ctx.strokeStyle = '#5c3a1e';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.roundRect(0, 0, p.w, p.h, 10);
+      ctx.fill(); ctx.stroke();
+      if (!maxed && !affordable) { ctx.fillStyle = 'rgba(30,18,8,0.35)'; ctx.beginPath(); ctx.roundRect(0, 0, p.w, p.h, 10); ctx.fill(); }
+
+      drawUpgradeIcon(p.key, 30, p.h / 2);
+
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#fff3d6';
+      ctx.font = '800 13px -apple-system, sans-serif';
+      ctx.fillText(p.label, 54, 22);
+      ctx.font = '700 11px -apple-system, sans-serif';
+      ctx.fillStyle = '#f2e3c6';
+      ctx.fillText(isToggle ? (maxed ? 'Active' : 'One-time hire') : ('Lv ' + (lvl[p.key] + 1) + '/' + panelVals(p.key).length), 54, 38);
+      ctx.font = '800 12px -apple-system, sans-serif';
+      ctx.fillStyle = maxed ? '#4caf6b' : (affordable ? '#ffe9a8' : '#e0c9a0');
+      ctx.fillText(maxed ? (isToggle ? 'HIRED' : 'MAX') : cost + ' coins', 54, 58);
+      ctx.restore();
+    });
+  }
+
+  function drawUpgradeIcon(key, cx, cy) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.strokeStyle = '#fff3d6';
+    ctx.fillStyle = '#fff3d6';
+    ctx.lineWidth = 2.4;
+    if (key === 'speed') {
+      ctx.beginPath();
+      ctx.moveTo(-9, -8); ctx.lineTo(1, 0); ctx.lineTo(-9, 8);
+      ctx.moveTo(-1, -8); ctx.lineTo(9, 0); ctx.lineTo(-1, 8);
+      ctx.stroke();
+    } else if (key === 'basket') {
+      ctx.beginPath();
+      ctx.moveTo(-11, -4); ctx.lineTo(-8, 9); ctx.lineTo(8, 9); ctx.lineTo(11, -4);
+      ctx.closePath(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-11, -4); ctx.lineTo(11, -4); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-6, -4); ctx.quadraticCurveTo(0, -14, 6, -4); ctx.stroke();
+    } else if (key === 'harvest') {
+      ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -6); ctx.moveTo(0, 0); ctx.lineTo(5, 2); ctx.stroke();
+    } else {
+      ctx.beginPath(); ctx.ellipse(0, 1, 8, 6, 0, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-8, -3); ctx.lineTo(-15, -9); ctx.moveTo(8, -3); ctx.lineTo(15, -9); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function draw() {
+    drawBackdrop();
+    drawHarvestZone();
+    drawHive2Zone();
+    drawStandZone();
+    drawTree();
+    drawHive2();
+
+    const sortables = [
+      { y: STAND_BASE.y, fn: drawStand },
+      { y: bearY, fn: drawBear },
+    ];
+    for (const c of customers) sortables.push({ y: c.y, fn: () => drawCustomer(c) });
+    sortables.sort((a, b) => a.y - b.y);
+    for (const s of sortables) s.fn();
+
+    drawBees();
+    drawHelperBee();
+    drawCoinDrops();
+    drawHarvestProgressRing();
+    drawObjectiveArrow();
+    drawFlyers();
+    drawSparkles();
+    drawFloaters();
+    drawUpgradePanels();
+
+    if (hurtFlash > 0) {
+      ctx.fillStyle = 'rgba(255,80,60,' + (hurtFlash * 0.28) + ')';
+      ctx.fillRect(0, 0, LW, LH);
+    }
+  }
+
+  let lastTime = 0;
+  function loop(ts) {
+    if (!running && dayOver) return;
+    const dt = Math.min((ts - lastTime) / 1000, 0.05) || 0;
+    lastTime = ts;
+    update(dt);
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  startBtn.addEventListener('click', startGame);
+  retryBtn.addEventListener('click', startGame);
+
+  refreshHud();
+  refreshTimerHud();
+  resize();
+  draw();
+
+  function idleDraw() {
+    if (!running) { draw(); requestAnimationFrame(idleDraw); }
+  }
+  requestAnimationFrame(idleDraw);
+})();
+</script>
+</body>
+</html>
