@@ -36,7 +36,7 @@
   #hud-top {
     position: absolute; top: 8px; left: 0; right: 0;
     display: flex; align-items: flex-start; justify-content: space-between;
-    padding: 0 10px; pointer-events: none;
+    padding: 0 42px 0 10px; pointer-events: none;
   }
   .hud-chip {
     background: var(--panel); border: 1px solid rgba(74,46,24,0.2);
@@ -52,11 +52,13 @@
   #sound-toggle {
     position: absolute; top: 8px; right: 8px;
     width: 26px; height: 26px; padding: 0;
-    background: rgba(255,255,255,0.65); border: 1px solid rgba(74,46,24,0.2);
-    border-radius: 6px; color: var(--ink); cursor: pointer;
+    background: var(--honey); border: 1px solid rgba(74,46,24,0.25);
+    border-radius: 6px; color: #4a2e18; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 0 rgba(74,46,24,0.2);
     z-index: 8; pointer-events: auto;
   }
+  #sound-toggle.muted { background: #d8cbb8; color: #8a6a45; }
   #sound-toggle svg { width: 14px; height: 14px; display: block; }
   #sound-toggle .mute-x { opacity: 0; }
   #sound-toggle.muted .wave { opacity: 0; }
@@ -325,6 +327,11 @@
   const STAND_BASE = { x: 1000, y: 430 };
   const STOCK_PT = { x: 950, y: 400 };
   const STOCK_R = 140;
+  const STAND_SOLID = {
+    minX: STAND_BASE.x - 150, maxX: STAND_BASE.x + 150,
+    minY: STAND_BASE.y - 80, maxY: STAND_BASE.y + 10,
+  };
+  const BEAR_COLLIDE_PAD = 24;
 
   const QUEUE_POS = [
     { x: 1120, y: 470 },
@@ -668,6 +675,11 @@
   function nearHive2() { return Math.hypot(bearX - HIVE2_PT.x, bearY - HIVE2_PT.y) < HIVE2_R; }
   function nearStock() { return Math.hypot(bearX - STOCK_PT.x, bearY - STOCK_PT.y) < STOCK_R; }
 
+  function collidesStand(x, y) {
+    return x > STAND_SOLID.minX - BEAR_COLLIDE_PAD && x < STAND_SOLID.maxX + BEAR_COLLIDE_PAD &&
+      y > STAND_SOLID.minY - BEAR_COLLIDE_PAD && y < STAND_SOLID.maxY + BEAR_COLLIDE_PAD;
+  }
+
   function activeHarvestSource() {
     if (nearHarvest()) return { bounce: 'tree', originX: TREE_BASE.x + 20, originY: TREE_BASE.y - 190 };
     if (hive2Unlocked && nearHive2()) return { bounce: 'hive2', originX: HIVE2_BASE.x + 15, originY: HIVE2_BASE.y - 140 };
@@ -817,8 +829,10 @@
       const len = Math.hypot(mx, my);
       mx /= len; my /= len;
       const sp = currentSpeed();
-      bearX = Math.min(BOUNDS.maxX, Math.max(BOUNDS.minX, bearX + mx * sp * dt));
-      bearY = Math.min(BOUNDS.maxY, Math.max(BOUNDS.minY, bearY + my * sp * dt));
+      const newX = Math.min(BOUNDS.maxX, Math.max(BOUNDS.minX, bearX + mx * sp * dt));
+      const newY = Math.min(BOUNDS.maxY, Math.max(BOUNDS.minY, bearY + my * sp * dt));
+      if (!collidesStand(newX, bearY)) bearX = newX;
+      if (!collidesStand(bearX, newY)) bearY = newY;
       if (mx !== 0) bearFacing = mx > 0 ? 1 : -1;
       walkTimer += dt;
       if (walkTimer > 0.18) { walkTimer = 0; walkFrame = 1 - walkFrame; }

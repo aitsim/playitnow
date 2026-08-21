@@ -395,6 +395,11 @@ footer {
   inset: 0;
 }
 
+.game-card__thumb img.thumb-contain {
+  object-fit: contain;
+  padding: 0.6rem;
+}
+
 
 .game-card__body {
   padding: 0.9rem 1rem 1.1rem;
