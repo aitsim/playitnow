@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Play Hangman Online Free — Word Guessing Game | PlayItNow</title>
+  <meta name="description" content="Play Hangman online free on PC, tablet or phone — the classic word guessing game. Guess the secret word letter by letter, use hints, earn diamonds and level up. No download needed." />
+  <link rel="canonical" href="https://playitnow.io/games/hangman" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="icon" type="image/png" sizes="192x192" href="../assets/hangman-icon.png" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "Hangman",
+  "description": "A friendly take on the classic word-guessing game — pick letters to uncover a hidden word before the stick figure is finished, earn diamonds, and use hints when you're stuck.",
+  "genre": "Puzzle",
+  "gamePlatform": "Web Browser",
+  "applicationCategory": "Game",
+  "operatingSystem": "Any",
+  "url": "https://playitnow.io/games/hangman",
+  "image": "https://playitnow.io/assets/hangman-thumb.png",
+  "publisher": {
+    "@type": "Organization",
+    "name": "PlayItNow",
+    "url": "https://playitnow.io"
+  },
+  "datePublished": "2026-09-19",
+  "dateModified": "2026-09-19",
+  "isAccessibleForFree": true,
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  }
+}
+  </script>
+  <link rel="stylesheet" href="../css/style.css" />
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6530474312289669"
+       crossorigin="anonymous"></script>
+
+  <style>
+    /* Hangman — bright word-game accent */
+    .word-hero {
+      background: linear-gradient(180deg, rgba(110, 180, 255, 0.16), transparent 60%);
+      border-radius: var(--radius);
+      padding: 0.5rem 0 0.5rem;
+      margin: 0 0 -0.5rem;
+    }
+    .word-hero h1 { display: flex; align-items: center; gap: 0.7rem; }
+    .word-hero h1 img { height: 120px; display: block; }
+    .word-badge {
+      display: inline-block;
+      font-family: var(--font-display);
+      font-size: 0.55rem;
+      letter-spacing: 0.08em;
+      color: #2b2540;
+      background: #7fd4ff;
+      border-radius: 999px;
+      padding: 0.3rem 0.7rem;
+      margin: 0 0 0.8rem;
+    }
+    /* taller game frame on phones so the keyboard has room */
+    @media (max-width: 700px) {
+      .cabinet__screen { aspect-ratio: 3 / 4; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="marquee">
+    <div class="marquee__bar">
+      <a href="../index.html" class="marquee__title">PlayItNow</a>
+      <nav class="marquee__nav">
+        <a href="../index.html">Play</a>
+        <a href="../contact.html">Contact</a>
+        <a href="../privacy.html">Privacy</a>
+        <a href="../terms.html">Terms</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <a href="../index.html" class="back-link">&larr; All games</a>
+
+    <div class="word-hero">
+      <p class="eyebrow">Free &middot; No download &middot; Play in browser</p>
+      <span class="word-badge">New category &middot; Word games</span>
+      <h1><img src="../assets/hangman-thumb.png" alt="" /> Hangman</h1>
+      <p class="subhead">
+        Play Hangman online for free — the classic word guessing game for
+        kids and adults. Guess the letters in the secret word, use hints
+        when you're stuck, and keep our stick-figure friend smiling.
+      </p>
+    </div>
+
+    <div class="ad-slot">
+      <ins class="adsbygoogle"
+           style="display:block"
+           data-ad-client="ca-pub-6530474312289669"
+           data-ad-slot="3475027290"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
+      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+    </div>
+
+    <div class="cabinet">
+      <div class="cabinet__screen">
+        <iframe
+          src="embed/hangman.html"
+          title="Hangman"
+          loading="lazy"
+          allow="fullscreen"
+          allowfullscreen
+        ></iframe>
+      </div>
+      <div class="cabinet__meta">
+        <span>Tap the letters or type on your keyboard &middot; works on mobile (touch)</span>
+        <span class="badge">Free Play</span>
+      </div>
+    </div>
+
+    <div class="ad-slot">
+      <ins class="adsbygoogle"
+           style="display:block"
+           data-ad-client="ca-pub-6530474312289669"
+           data-ad-slot="3475027290"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
+      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+    </div>
+
+    <h2>Hangman instructions — how to play</h2>
+    <p>
+      The goal of Hangman is simple: guess the letters in the secret word
+      before the stick figure is finished. Every round starts with a topic
+      and a hidden word shown as a row of blank tiles — one tile per letter.
+      Guess a letter by clicking or tapping it on the on-screen keyboard, or
+      by typing it on your physical keyboard. If the
+      letter is in the word, it appears in every spot where it belongs and
+      you score 10 points. If it isn't, the stick figure by the wooden
+      frame gets another piece: first the rope, then the head, body, both
+      arms, and finally both legs. You can make six mistakes safely — the
+      seventh wrong guess finishes the drawing and ends the round. But
+      don't worry, this stick figure never gets hurt: if you run out of
+      guesses he just bursts into tears, and you can try another word right
+      away. Uncover every letter first and he cheers, you earn 2 diamonds,
+      and you move up a level, where the words get a little longer.
+    </p>
+
+    <div class="tag-list">
+      <span>Hangman game</span>
+      <span>Play Hangman online</span>
+      <span>Hangman online free</span>
+      <span>Word guessing game</span>
+      <span>Word game</span>
+      <span>Word puzzle game</span>
+      <span>Letter guessing game</span>
+      <span>Guess the word game</span>
+      <span>Hangman game for PC</span>
+      <span>Hangman game no download</span>
+      <span>Online Hangman game</span>
+      <span>Hangman for kids</span>
+      <span>Hangman with hints</span>
+      <span>Spelling game</span>
+      <span>Vocabulary game</span>
+      <span>Classic word game</span>
+      <span>Free online game</span>
+      <span>No download</span>
+      <span>Instant play</span>
+      <span>Mobile &amp; desktop</span>
+      <span>Progress saved locally</span>
+    </div>
+
+    <h3>Topics you'll play</h3>
+    <ul>
+      <li><strong>Animals</strong> — from cat and frog up to kangaroo and crocodile</li>
+      <li><strong>Food</strong> — pizza, banana, pancake, strawberry, and more</li>
+      <li><strong>School supplies</strong> — pencil, ruler, backpack, notebook</li>
+      <li><strong>Clothes</strong> — sock, scarf, jacket, sneakers</li>
+      <li><strong>Body parts</strong> — elbow, finger, shoulder, and friends</li>
+      <li><strong>Kitchen tools</strong> — whisk, ladle, spatula, toaster</li>
+      <li><strong>Professions</strong> — chef, pilot, dentist, astronaut</li>
+      <li><strong>Mythology</strong> — dragon, unicorn, phoenix, minotaur</li>
+      <li><strong>Verbs</strong> — jump, dance, whisper, tumble</li>
+    </ul>
+
+    <h3>Controls</h3>
+    <table class="info-table">
+      <thead>
+        <tr>
+          <th>Action</th>
+          <th>Desktop</th>
+          <th>Mobile</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Guess a letter</td>
+          <td>Click a letter, or press it on your keyboard</td>
+          <td>Tap a letter on the on-screen keyboard</td>
+        </tr>
+        <tr>
+          <td>Use a hint</td>
+          <td>Click the Hint button (costs 1 diamond)</td>
+          <td>Tap the Hint button (costs 1 diamond)</td>
+        </tr>
+        <tr>
+          <td>Next word</td>
+          <td>Click the button, or press Enter</td>
+          <td>Tap the button</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Hangman tips &amp; strategies</h3>
+    <ul>
+      <li><strong>Start with the vowels.</strong> A, E, I, O and U appear in almost every word, and there are only five of them, so you'll usually land one within a couple of guesses. Even one vowel can point straight to the answer — a pattern like _ A _ A _ A practically spells BANANA.</li>
+      <li><strong>Learn "ETAOIN SHRDLU".</strong> That odd-looking phrase lists the most common letters in English, roughly in order: E, T, A, O, I, N, S, H, R, D, L, U. After your vowels, work through these before you try anything rare.</li>
+      <li><strong>Use the topic as a clue.</strong> If the topic is Kitchen Tools, think about what's actually in a kitchen before you guess — it narrows the possibilities a lot.</li>
+      <li><strong>Watch the word length.</strong> A three-letter word and a ten-letter word call for very different guesses — short words often have just one vowel, and long words usually contain common endings like -ING or -ER.</li>
+      <li><strong>Save J, Q, X and Z for later.</strong> These rare letters trip people up. Don't lead with them, but keep them in mind when the common letters have all missed.</li>
+      <li><strong>Guess the whole word when you can.</strong> After a few letters are revealed, look at the gaps and try to picture the full word — then fill in the remaining letters with confidence.</li>
+      <li><strong>Save your diamonds.</strong> A hint reveals one random missing letter for 1 diamond, and you only earn 2 per word — keep them for the tough ones.</li>
+    </ul>
+
+    <h2>What are the hardest Hangman words?</h2>
+    <p>
+      In general, the trickiest Hangman words are short ones packed with rare
+      letters, like <strong>jazz</strong>, <strong>fizz</strong> or
+      <strong>jinx</strong> — with so few letters and no common ones to
+      find, there's very little to work with. Words with no regular vowels
+      are just as awkward: <strong>rhythm</strong>, <strong>psych</strong>,
+      <strong>synth</strong> and <strong>myth</strong> leave a vowel-first
+      strategy with nothing to reveal. The words in this game are everyday
+      vocabulary chosen by topic, so they're friendlier — but the same
+      strategies apply, and the longer words at higher levels will still
+      put your guessing skills to the test.
+    </p>
+
+    <h2>What do you learn from playing Hangman?</h2>
+    <p>
+      Hangman is a quiet way to practice spelling, vocabulary and pattern
+      recognition. Every guess makes you think about which letters go
+      together, how words are built, and what fits the topic — which is why
+      it's a long-time favorite for classrooms and family game time. Playing
+      by topic also helps expand your everyday knowledge: animals, foods,
+      clothes, jobs, and a little mythology. If you like word puzzles such as
+      word search, crosswords or cryptograms, Hangman is a friendly
+      warm-up for the same kind of thinking.
+    </p>
+
+    <h2>Game features at a glance</h2>
+    <ul>
+      <li>Classic Hangman with seven chances per word and a friendly stick figure</li>
+      <li>Nine topics of kid-friendly words, with longer words as your level rises</li>
+      <li>10 points for every correct letter and 2 diamonds for each word you solve</li>
+      <li>Diamond-powered hints that reveal a missing letter when you're stuck</li>
+      <li>No game over — a lost round just means a tearful stick figure and a fresh word</li>
+      <li>On-screen keyboard for touch screens, plus full physical keyboard support</li>
+      <li>Level, score, and diamonds saved locally in your browser</li>
+      <li>Bright, cheerful illustrated style with sound effects you can mute</li>
+      <li>Runs entirely in-browser, no plugins or installs</li>
+    </ul>
+
+    <h2>About this game</h2>
+    <p>
+      Hangman is an original PlayItNow build, made in-house for instant
+      browser play — no downloads, no sign-up, nothing to install. It's the
+      first game in our Word games category, and it takes the pen-and-paper
+      classic many of us played at school and gives it a friendlier twist:
+      a cheerful look, topics to think about, and a stick figure who
+      responds to how you're doing. It's easy enough for younger players
+      building their spelling and vocabulary, and the longer words at higher
+      levels still give adults something to chew on.
+    </p>
+    <p>
+      If you grew up with the Hangman board game, a magnetic Hangman set, or
+      a Hangman toy, this is the same classic played on screen — no pieces
+      to lose and no pencil to sharpen. It's a Hangman game for PC, Mac,
+      Chromebook, tablet and phone that runs right in your browser, so
+      there's no download and no install: just open the page and play.
+    </p>
+
+    <h3>Hangman — FAQ</h3>
+
+    <details class="faq-item">
+      <summary>How do I play Hangman?</summary>
+      <p>Guess one letter at a time by tapping the on-screen keyboard or pressing keys on your own keyboard. Correct letters fill in the blanks; wrong ones add a piece to the stick figure. Reveal the whole word before all seven pieces are drawn.</p>
+    </details>
+
+    <details class="faq-item">
+      <summary>How many wrong guesses do I get?</summary>
+      <p>Seven in total. The pieces appear in order — rope, head, body, two arms, two legs — and the seventh wrong guess ends the round.</p>
+    </details>
+
+    <details class="faq-item">
+      <summary>What happens when I lose a round?</summary>
+      <p>Nothing scary — the stick figure just starts crying and the game shows you the word. You keep your level and your diamonds, and you can jump straight into another word.</p>
+    </details>
+
+    <details class="faq-item">
+      <summary>What are diamonds for?</summary>
+      <p>You start with 3, and earn 2 more each time you solve a word. Spend 1 on the Hint button to reveal one random missing letter.</p>
+    </details>
+
+    <details class="faq-item">
+      <summary>What letters should I guess first in Hangman?</summary>
+      <p>Start with vowels — especially E, A and O — then move through the most common consonants: T, N, S, R, H, D and L. Leave rare letters like J, Q, X and Z for last.</p>
+    </details>
+
+    <details class="faq-item">
+      <summary>What are the hardest words to guess in Hangman?</summary>
+      <p>Short words with rare letters (like jazz or jinx) and words without the usual vowels (like rhythm, psych or synth) are the toughest. The words in this game are everyday vocabulary, so they're more forgiving.</p>
+    </details>
+
+    <details class="faq-item">
+      <summary>Can I play Hangman with friends?</summary>
+      <p>Not at the moment — this version is a single-player game where you play against the word. You can always take turns with a friend on the same device and compare who solves more words.</p>
+    </details>
+
+    <details class="faq-item">
+      <summary>Does Hangman help with spelling and vocabulary?</summary>
+      <p>Yes — guessing letters one at a time builds spelling awareness, and playing by topic exposes you to new everyday words, which makes it a nice game for kids learning to read and spell.</p>
+    </details>
+
+    <details class="faq-item">
+      <summary>Do I need to download Hangman?</summary>
+      <p>No — there's nothing to download or install. This online Hangman game runs directly in your web browser, so you can start playing the moment the page loads.</p>
+    </details>
+
+    <details class="faq-item">
+      <summary>Can I play Hangman on PC?</summary>
+      <p>Yes. It works in any modern desktop browser on Windows, Mac, Linux and Chromebook, and you can guess letters by typing on your keyboard. It also works on tablets and phones.</p>
+    </details>
+
+    <details class="faq-item">
+      <summary>How is this different from the Hangman board game, magnetic set, or toy?</summary>
+      <p>The rules are the same classic idea — guess letters, and wrong guesses add pieces to the stick figure. The difference is that everything happens on screen: the game picks the word for you by topic, keeps score, and lets you earn diamonds for hints, so you don't need a second player to think of a word.</p>
+    </details>
+
+    <details class="faq-item">
+      <summary>Is there a 3D Hangman, or can I create my own Hangman game?</summary>
+      <p>This version is a bright 2D illustrated game, and the words come from built-in topics — you can't add your own words yet.</p>
+    </details>
+
+    <details class="faq-item">
+      <summary>Is my progress saved?</summary>
+      <p>Yes — your level, score, and diamonds are saved locally in your browser, so they're still there next time you visit on the same device and browser.</p>
+    </details>
+
+    <details class="faq-item">
+      <summary>Does it work on phones and tablets?</summary>
+      <p>Yes — the on-screen keyboard is built for touch, and the layout switches to a stacked view on narrow screens.</p>
+    </details>
+
+    <details class="faq-item">
+      <summary>Is Hangman suitable for kids?</summary>
+      <p>The words are all everyday, kid-friendly vocabulary, and the stick figure is never hurt — he only gets sad if you run out of guesses. It's a fun way to practice spelling.</p>
+    </details>
+
+    <p style="margin-top:2rem;">
+      Looking for something else? <a href="../index.html">Browse all games on PlayItNow</a>.
+    </p>
+  </main>
+
+  <footer>
+    <div class="footer__bar">
+      <span>&copy; <span id="year"></span> PlayItNow</span>
+      <div class="footer__links">
+        <a href="../contact.html">Contact</a>
+        <a href="../privacy.html">Privacy Policy</a>
+        <a href="../terms.html">Terms of Use</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="../js/main.js"></script>
+</body>
+</html>
