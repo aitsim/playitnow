@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="robots" content="noindex" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Word Connect Online</title>
+<style>
+  :root {
+    --ink: #4a3018;
+    --ink-dim: #8a6a45;
+    --cream: #fff6dc;
+    --wood: #c99a55;
+    --green: #6cbe48;
+    --gold: #ffc94a;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
+    font-family: ui-rounded, 'SF Pro Rounded', 'Nunito', 'Trebuchet MS', -apple-system, 'Segoe UI', sans-serif;
+    color: var(--ink); background: #dff0cf;
+    -webkit-user-select: none; user-select: none; touch-action: manipulation;
+  }
+  button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; padding: 0; }
+  #app { position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; }
+
+  /* ---------- top bar ---------- */
+  #top {
+    flex: 0 0 auto; height: 44px; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 10px; gap: 8px;
+    background: linear-gradient(180deg, #fff8e4, #f6e7bd); border-bottom: 3px solid #b98442;
+  }
+  #title { font-weight: 800; font-size: 15px; letter-spacing: .01em; text-align: center; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ibtn { width: 34px; height: 34px; border-radius: 50%; background: #fff; border: 2px solid #d8b47c; font-size: 16px; line-height: 1; display: grid; place-items: center; box-shadow: 0 2px 0 rgba(120,80,30,.2); }
+  #hintbtn { position: relative; width: 40px; height: 40px; margin: -2px 0; }
+  #hintbtn img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  #hintbtn .badge {
+    position: absolute; right: -4px; bottom: -2px; min-width: 20px; height: 20px; padding: 0 5px;
+    border-radius: 999px; background: #e0533b; color: #fff; font-size: 12px; font-weight: 800; display: grid; place-items: center;
+    border: 2px solid #fff6dc;
+  }
+  #hintbtn.off img { filter: grayscale(.8) opacity(.6); }
+  #hintbtn.bump, #jar.bump { animation: bump .45s ease; }
+  @keyframes bump { 40% { transform: scale(1.25); } }
+
+  /* ---------- layout ---------- */
+  #main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  #scene {
+    flex: 0 0 34%; position: relative; overflow: hidden; container-type: size;
+    background: #a7d8f5 center 72% / cover no-repeat; border-bottom: 4px solid #a8743a;
+  }
+  #board {
+    flex: 1; min-height: 0; position: relative; display: flex; flex-direction: column; align-items: center;
+    padding: 6px 8px 8px; background: linear-gradient(180deg, #eaf6d8, #fdf1d3);
+  }
+  @media (min-aspect-ratio: 11/10) {
+    #main { flex-direction: row; }
+    #scene { flex: 1 1 56%; border-bottom: 0; border-right: 4px solid #a8743a; }
+    #board { flex: 1 1 44%; }
+  }
+
+  /* ---------- scene ---------- */
+  #gname {
+    position: absolute; left: 8px; top: 8px; z-index: 2000; padding: 3px 10px; border-radius: 999px;
+    background: rgba(255,246,220,.9); border: 2px solid #d8b47c; font-size: 12px; font-weight: 800;
+  }
+  .piece {
+    position: absolute; left: calc(var(--x) * 1%); bottom: calc(var(--b) * 1cqh);
+    height: min(calc(var(--h) * 1cqh), calc(var(--h) * 1.7cqw)); transform: translateX(-50%); pointer-events: none;
+  }
+  .piece img { height: 100%; width: auto; display: block; transform-origin: 50% 100%; }
+  .piece.grow img { animation: grow .8s cubic-bezier(.3, 1.6, .5, 1) both; }
+  .piece.walk img { animation: walk 1.6s ease-out both; }
+  @keyframes grow { from { transform: scale(0); } 60% { transform: scale(1.14); } to { transform: scale(1); } }
+  @keyframes walk { from { transform: translateX(80cqw); } to { transform: none; } }
+  .spark {
+    position: absolute; left: 50%; bottom: 40%; font-size: 14px; color: #ffd23f; text-shadow: 0 0 6px #fff; opacity: 0;
+    animation: spark .9s ease-out forwards;
+  }
+  @keyframes spark { 0% { opacity: 1; transform: translate(0,0) scale(.6); } 100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(1.2); } }
+
+  /* ---------- word slots ---------- */
+  #slots {
+    flex: 1 1 0; min-height: 60px; width: 100%; display: flex; flex-wrap: wrap; justify-content: center; align-content: center;
+    gap: calc(var(--s) * .16) calc(var(--s) * .5); --s: 40px;
+  }
+  .word { display: flex; gap: calc(var(--s) * .08); }
+  .slot {
+    width: var(--s); height: var(--s); display: grid; place-items: center;
+    background: url(../../assets/slot-empty.png) center / 100% 100% no-repeat;
+    font-weight: 800; font-size: calc(var(--s) * .56); line-height: 1; color: var(--ink);
+  }
+  .slot.filled { background-image: url(../../assets/slot-filled.png); }
+  .slot.hint { color: rgba(74,48,24,.38); }
+  .slot.pop { animation: pop .42s cubic-bezier(.3, 1.6, .5, 1) both; animation-delay: calc(var(--i) * 60ms); }
+  @keyframes pop { from { transform: scale(.3); opacity: 0; } to { transform: none; opacity: 1; } }
+
+  /* ---------- current word ---------- */
+  #cur {
+    flex: 0 0 auto; height: 38px; margin: 2px 0; min-width: 120px; max-width: 100%; padding: 0 16px; border-radius: 999px;
+    display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 20px; letter-spacing: .12em;
+    color: var(--ink); border: 2px solid transparent; transition: background .15s; text-transform: uppercase; white-space: nowrap;
+  }
+  #cur.on { background: #fff6dc; border-color: #d8b47c; }
+  #cur.msg { font-size: 14px; letter-spacing: .02em; text-transform: none; background: #fff6dc; border-color: #d8b47c; }
+  #cur.good { background: #e3f6cf; border-color: #7fc85a; }
+  #cur.bonus { background: #fff0b8; border-color: #ffc94a; }
+  #cur.bad { background: #fde4dc; border-color: #e58b73; animation: shake .35s; }
+  @keyframes shake { 20%,60% { transform: translateX(-6px); } 40%,80% { transform: translateX(6px); } }
+
+  /* ---------- wheel ---------- */
+  #wheel { position: relative; flex: 0 0 auto; width: var(--w); height: var(--w); touch-action: none; }
+  #wheel > img.base { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  #pathsvg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+  .tile {
+    position: absolute; width: var(--t); height: var(--t); margin: calc(var(--t) / -2) 0 0 calc(var(--t) / -2);
+    background: url(../../assets/tile-normal.png) center / 100% 100% no-repeat; display: grid; place-items: center;
+    font-weight: 800; font-size: calc(var(--t) * .5); color: var(--ink); text-transform: uppercase; line-height: 1;
+    transition: left .38s cubic-bezier(.4, 1.3, .5, 1), top .38s cubic-bezier(.4, 1.3, .5, 1), transform .12s;
+    pointer-events: none; text-shadow: 0 1px 0 rgba(255,255,255,.7);
+  }
+  .tile.sel { background-image: url(../../assets/tile-selected.png); transform: scale(1.1); }
+  #shuffle {
+    position: absolute; left: 50%; top: 50%; width: calc(var(--w) * .25); height: calc(var(--w) * .25);
+    transform: translate(-50%, -50%); transition: transform .3s;
+  }
+  #shuffle img { width: 100%; height: 100%; object-fit: contain; display: block; pointer-events: none; }
+  #shuffle:active { transform: translate(-50%, -50%) rotate(180deg) scale(.92); }
+  #jar {
+    position: absolute; left: 8px; bottom: 8px; width: clamp(46px, calc(var(--w) * .22), 74px); text-align: center;
+  }
+  #jar img { width: 100%; display: block; }
+  #jar span {
+    display: block; margin-top: -4px; font-size: 12px; font-weight: 800; background: #fff6dc; border: 2px solid #d8b47c;
+    border-radius: 999px; padding: 0 6px; line-height: 17px;
+  }
+  #hand { position: absolute; z-index: 5; width: calc(var(--w) * .2); pointer-events: none; opacity: 0; transition: left .5s ease, top .5s ease, opacity .3s; }
+  #hand img { width: 100%; display: block; animation: tap 1s ease-in-out infinite; }
+  @keyframes tap { 50% { transform: scale(.92); } }
+
+  /* ---------- overlay ---------- */
+  #ov {
+    position: absolute; inset: 0; z-index: 10; display: none; align-items: center; justify-content: center; padding: 14px;
+    background: linear-gradient(180deg, #fff8e4, #fbeecb); text-align: center;
+  }
+  #ov.show { display: flex; animation: fade .35s ease both; }
+  @keyframes fade { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  #ov .panel { width: 100%; max-width: 380px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  #ov h2 { margin: 0; font-size: clamp(22px, 5.4vw, 30px); }
+  #ov p { margin: 0; font-size: 14px; color: var(--ink-dim); font-weight: 700; line-height: 1.35; }
+  .dots { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; }
+  .dots i { width: 14px; height: 14px; border-radius: 50%; background: #e6d3a8; border: 2px solid #d3b57b; }
+  .dots i.on { background: var(--green); border-color: #4c9a2f; }
+  .big {
+    margin-top: 4px; padding: 12px 34px; border-radius: 999px; font-size: 20px; font-weight: 800; color: #2d4a12;
+    background: linear-gradient(180deg, #9be06f, #6cbe48); border: 3px solid #4c9a2f; box-shadow: 0 4px 0 #3f8225;
+  }
+  .big:active { transform: translateY(3px); box-shadow: 0 1px 0 #3f8225; }
+  .big.alt { background: linear-gradient(180deg, #fff, #f3e4bd); border-color: #c99a55; box-shadow: 0 4px 0 #a8743a; color: var(--ink); font-size: 16px; padding: 9px 22px; }
+  .decos { display: flex; gap: 14px; justify-content: center; }
+  .deco { width: clamp(84px, 24vw, 120px); padding: 8px; border-radius: 14px; background: #fff; border: 3px solid #d8b47c; box-shadow: 0 3px 0 rgba(120,80,30,.25); }
+  .deco:active { transform: scale(.95); }
+  .deco img { width: 100%; display: block; }
+
+  #loading { position: absolute; inset: 0; z-index: 50; display: grid; place-items: center; background: #dff0cf; font-weight: 800; }
+  #loading.gone { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="top">
+    <button class="ibtn" id="snd" aria-label="Toggle sound">&#128266;</button>
+    <div id="title">Garden 1 &middot; Level 1/10</div>
+    <button id="hintbtn" aria-label="Use a hint"><img src="../../assets/icon-hint.png" alt="" /><span class="badge" id="hintcount">2</span></button>
+  </div>
+  <div id="main">
+    <div id="scene">
+      <div id="gname">Backyard Garden</div>
+      <div id="layer"></div>
+    </div>
+    <div id="board">
+      <div id="slots"></div>
+      <div id="cur"></div>
+      <div id="wheel">
+        <img class="base" src="../../assets/wheel-base.png" alt="" draggable="false" />
+        <svg id="pathsvg"><polyline id="poly" fill="none" stroke="#6cbe48" stroke-opacity=".85" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        <button id="shuffle" aria-label="Shuffle letters"><img src="../../assets/icon-shuffle.png" alt="" draggable="false" /></button>
+      </div>
+      <div id="jar" aria-label="Bonus jar"><img src="../../assets/icon-bonus-jar.png" alt="" draggable="false" /><span id="jarcount">0/5</span></div>
+      <div id="hand"><img src="../../assets/icon-hand.png" alt="" draggable="false" /></div>
+      <div id="ov"><div class="panel" id="panel"></div></div>
+    </div>
+  </div>
+  <div id="loading">Planting the garden&hellip;</div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const LEVELS = [{"l":"team","t":["eat","mat","tea","team"],"b":["ate","mate","meat","met","tame"]},{"l":"star","t":["art","rat","sat","star"],"b":["arts","rats","tar","tars"]},{"l":"plan","t":["lap","nap","pan","plan"],"b":["pal"]},{"l":"rose","t":["ore","rose","sore"],"b":["ores","roe","roes"]},{"l":"lake","t":["ale","kale","lake","leak"],"b":["elk"]},{"l":"rains","t":["air","sir","rain","rains"],"b":["airs","ran","sari","sin"]},{"l":"snow","t":["now","own","sow","snow"],"b":["owns","son","sown","won"]},{"l":"birds","t":["bid","rib","bird","birds"],"b":["bids","ribs","rid","rids","sir"]},{"l":"leaf","t":["ale","elf","flea","leaf"],"b":["lea"]},{"l":"plant","t":["ant","pant","plan","plant"],"b":["alp","apt","lap","nap","pal","pan","pat","tan","tap"]},{"l":"heart","t":["hate","hear","heat","earth","heart"],"b":["are","art","ate","ear","eat","era","hare","hat","hater","her","rat","rate","rhea","tea","tear","the"]},{"l":"stone","t":["note","ones","tone","notes","stone"],"b":["nest","net","nets","nose","not","one","onset","sent","set","snot","son","ten","tens","toe","toes","ton","tons"]},{"l":"water","t":["rate","tear","wear","water"],"b":["are","art","ate","awe","ear","eat","era","rat","raw","tar","tare","tea","war","ware","wart","wet"]},{"l":"lights","t":["list","light","sight","lights","slight"],"b":["gilt","gilts","gist","hilt","hilts","hit","hits","its","lit","sit","this"]},{"l":"bread","t":["bear","dare","read","beard","bread"],"b":["abed","are","bad","bade","bar","bard","bare","bead","bed","bred","dab","dear","drab","ear","era","red"]},{"l":"smile","t":["isle","lime","mile","slime","smile"],"b":["elm","elms","lie","lies","limes","miles","semi","slim"]},{"l":"cloud","t":["old","cold","loud","cloud","could"],"b":["clod","cod","cud","doc","duo"]},{"l":"teach","t":["ache","chat","each","cheat","teach"],"b":["ace","ate","eat","etch","hat","hate","heat","tea","the"]},{"l":"pearl","t":["leap","pale","pear","plea","pearl"],"b":["ale","ape","are","ear","earl","era","lap","pal","par","pare","pea","peal","rap","rape","real","reap"]},{"l":"grape","t":["gap","gape","page","pear","grape"],"b":["age","ape","are","ear","era","erg","gar","gear","par","pare","pea","peg","rag","rage","rap","rape","reap"]},{"l":"planet","t":["lane","pane","panel","plane","plant","planet"],"b":["ale","ant","ante","ape","apt","ate","eat","lap","late","lean","leap","leapt","lent","let","nap","neat","net","pal","pale","pan","pant","pat","pate","pea","peal","pen","pent","pet","petal","plan","plate","pleat","tale","tan","tap","tape","tea","teal","ten"]},{"l":"stream","t":["mast","star","team","steam","master","stream"],"b":["are","arm","arms","art","arts","ate","ear","ears","east","eat","eats","era","mar","mare","mars","mart","mat","mate","mates","mats","meat","ram","rams","rat","rate","rates","rats","rest","sat","sea","seam","sear","seat","set","smart","smear","stare","stem","tame","tamer","tamers","tar","tars","tea","tear","tears","term","terms","tram","trams"]},{"l":"silver","t":["evil","sire","liver","lives","silver","sliver"],"b":["evils","ire","ires","isle","lie","lier","lies","live","livers","rile","rise","rive","rives","sir","veil","veils","vile"]},{"l":"forest","t":["fort","rest","rose","sore","forest","foster"],"b":["foe","foes","for","fore","forte","fret","oft","ore","ores","ref","refs","rot","rote","rots","set","soft","sort","store","toe","toes","tore"]},{"l":"winter","t":["twin","went","wine","wire","write","winter"],"b":["inert","inter","ire","net","new","newt","nit","rein","rent","rite","ten","tern","tie","tier","tin","tine","tire","twine","weir","wen","wet","win","wit","wren","writ"]},{"l":"bright","t":["big","hit","rig","girth","right","bright"],"b":["birth","bit","brig","girt","grit","rib","trig"]},{"l":"monkey","t":["key","one","yen","monk","money","monkey"],"b":["eon","ken","men","omen","yoke"]},{"l":"flower","t":["low","owl","flow","fowl","lower","flower"],"b":["elf","few","flew","floe","foe","for","fore","lore","ore","owe","ref","roe","role","row","woe","wolf","wore"]},{"l":"candle","t":["lace","lend","clean","dance","lance","candle"],"b":["ace","acne","ale","and","cad","cane","clad","clan","deal","dean","decal","den","end","laced","lad","lade","laden","lanced","land","lane","lead","lean","led"]},{"l":"garden","t":["near","anger","grand","range","danger","garden"],"b":["age","aged","and","are","dare","darn","dean","dear","den","drag","end","era","gad","gander","gear","grade","nag","rage","ran","rand","rang","ranged","read","red","rend"]}];
+  const IMG = '../../assets/';
+  const KEY = 'playitnow_wordconnect_v1';
+  const GARDEN_LEVELS = 10;
+
+  // ---------- Garden definitions ----------
+  // Growth order + placement (x = % of scene width, b = base % up from the scene bottom, h = height % of scene height).
+  const LAYOUT = [
+    { role: 'stone', x: 68, b: 3,  h: 6  },
+    { role: 'f1',    x: 30, b: 14, h: 34 },
+    { role: 'f2',    x: 66, b: 12, h: 36 },
+    { role: 'bush',  x: 11, b: 26, h: 21 },
+    { role: 'f3',    x: 48, b: 24, h: 43 },
+    { role: 'mush',  x: 86, b: 17, h: 17 },
+    { role: 'f4',    x: 20, b: 5,  h: 34 },
+    { role: 'fern',  x: 84, b: 30, h: 33 },
+    { role: 'pond',  x: 42, b: 2,  h: 13 },
+    { role: 'tree',  x: 68, b: 32, h: 60 },
+  ];
+  const FILES = [
+    { stone: 'g1-stone', f1: 'g1-daisy', f2: 'g1-tulip', bush: 'g1-bush', f3: 'g1-sunflower', mush: 'g1-mushrooms', f4: 'g1-rose', fern: 'g1-fern', pond: 'g1-pond', tree: 'g1-tree' },
+    { stone: 'g2-stone', f1: 'g2-flower1', f2: 'g2-flower2', bush: 'g2-grass1', f3: 'g2-flower3', mush: 'g2-clover', f4: 'g2-flower4', fern: 'g2-grass2', pond: 'g2-stream', tree: 'g2-tree' },
+    { stone: 'g3-stone', f1: 'g3-flower1', f2: 'g3-flower2', bush: 'g3-plant1', f3: 'g3-flower3', mush: 'g3-mushrooms', f4: 'g3-flower4', fern: 'g3-plant2', pond: 'g3-pond', tree: 'g3-tree' },
+  ];
+  const GARDENS = [
+    { name: 'Backyard Garden', bg: 'garden1-backyard', visitor: { f: 'visitor-hedgehog', x: 89, b: 2, h: 15 }, deco: ['deco-g1-a', 'deco-g1-b'] },
+    { name: 'Butterfly Meadow', bg: 'garden2-meadow', visitor: { f: 'visitor-butterfly', x: 58, b: 22, h: 15 }, deco: ['deco-g2-a', 'deco-g2-b'] },
+    { name: 'Moon Garden', bg: 'garden3-moon', visitor: { f: 'visitor-owl', x: 58, b: 30, h: 22 }, deco: ['deco-g3-a', 'deco-g3-b'] },
+  ];
+  const DECO_POS = { x: 92, b: 5, h: 30 };
+  GARDENS.forEach((g, gi) => { g.pieces = LAYOUT.map((p) => Object.assign({ f: FILES[gi][p.role] }, p)); });
+  // Flip these on as each set of artwork is added to /assets (gardens 2 & 3, and the end-of-garden decoration choices).
+  const ready = [true, false, false];
+  const decoOK = [false, false, false];
+
+  const probe = (name) => new Promise((res) => {
+    const im = new Image(); im.onload = () => res(true); im.onerror = () => res(false); im.src = IMG + name + '.png';
+  });
+
+  // ---------- Audio (synthesized) ----------
+  let audioCtx = null, soundOn = true;
+  try { soundOn = localStorage.getItem('wordconnect_sound') !== 'off'; } catch (e) {}
+  function tone(freq, dur, type, gain, delay) {
+    if (!soundOn) return;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!audioCtx && AC) audioCtx = new AC();
+    const ac = audioCtx; if (!ac) return;
+    if (ac.state === 'suspended') ac.resume();
+    const t0 = ac.currentTime + (delay || 0);
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = type || 'sine'; o.frequency.setValueAtTime(freq, t0);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(gain, t0 + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(ac.destination); o.start(t0); o.stop(t0 + dur + 0.02);
+  }
+  const sfx = {
+    tap: (k) => tone(400 + k * 55, 0.07, 'triangle', 0.09),
+    good: () => { tone(620, 0.09, 'sine', 0.14); tone(830, 0.12, 'sine', 0.12, 0.07); },
+    bonus: () => { [700, 930, 1240].forEach((f, i) => tone(f, 0.1, 'sine', 0.1, i * 0.06)); },
+    bad: () => { tone(210, 0.14, 'sawtooth', 0.07); tone(160, 0.18, 'sawtooth', 0.06, 0.07); },
+    dupe: () => tone(300, 0.1, 'square', 0.05),
+    hint: () => { tone(900, 0.07, 'sine', 0.1); tone(1200, 0.1, 'sine', 0.09, 0.06); tone(1500, 0.12, 'sine', 0.08, 0.12); },
+    shuffle: () => { tone(330, 0.06, 'triangle', 0.08); tone(440, 0.06, 'triangle', 0.08, 0.05); tone(550, 0.08, 'triangle', 0.08, 0.1); },
+    grow: () => { [392, 494, 587, 784].forEach((f, i) => tone(f, 0.14, 'triangle', 0.13, i * 0.09)); },
+    finish: () => { [523, 659, 784, 1046, 1318].forEach((f, i) => tone(f, 0.18, 'triangle', 0.13, i * 0.1)); },
+  };
+  const sndBtn = $('snd');
+  const paintSnd = () => { sndBtn.innerHTML = soundOn ? '&#128266;' : '&#128263;'; };
+  paintSnd();
+  sndBtn.addEventListener('click', () => {
+    soundOn = !soundOn; paintSnd();
+    try { localStorage.setItem('wordconnect_sound', soundOn ? 'on' : 'off'); } catch (e) {}
+  });
+
+  // ---------- Save / load ----------
+  const fresh = () => ({ done: 0, hints: 2, jar: 0, found: [], bonus: [], hinted: {}, deco: {}, tut: 0 });
+  let S = fresh();
+  try {
+    const raw = JSON.parse(localStorage.getItem(KEY) || 'null');
+    if (raw && typeof raw === 'object') S = Object.assign(fresh(), raw);
+  } catch (e) {}
+  if (!(S.done >= 0 && S.done <= LEVELS.length)) S.done = 0;
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
+
+  // ---------- Elements ----------
+  const scene = $('scene'), layer = $('layer'), board = $('board'), slotsEl = $('slots'), cur = $('cur');
+  const wheel = $('wheel'), poly = $('poly'), ov = $('ov'), panel = $('panel'), hand = $('hand');
+
+  // ---------- Level state ----------
+  let L = null;                 // current level data
+  let tiles = [];               // {el, ch, slot}
+  let sel = [];                 // selected tile indices (player)
+  let demoSel = [], demoOn = false, demoTimer = null;
+  let dragging = false, ptr = null, locked = false, curTimer = null;
+  let W = 0, R = 0, TS = 0;
+
+  const rnd = (n) => Math.floor(Math.random() * n);
+  const gardenIdx = () => (gate() ? S.done / GARDEN_LEVELS - 1 : Math.min(Math.floor(S.done / GARDEN_LEVELS), GARDENS.length - 1));
+  const gate = () => S.done > 0 && S.done % GARDEN_LEVELS === 0 && (S.done >= LEVELS.length || !ready[S.done / GARDEN_LEVELS] || (decoOK[S.done / GARDEN_LEVELS - 1] && !S.deco[S.done / GARDEN_LEVELS - 1]));
+  const progress = () => (gate() ? GARDEN_LEVELS : S.done % GARDEN_LEVELS);
+
+  // ---------- Scene ----------
+  function pieceEl(f, x, b, h, cls) {
+    const d = document.createElement('div');
+    d.className = 'piece' + (cls ? ' ' + cls : '');
+    d.style.setProperty('--x', x); d.style.setProperty('--b', b); d.style.setProperty('--h', h);
+    d.style.zIndex = String(1000 - Math.round(b * 10));
+    const im = new Image(); im.src = IMG + f + '.png'; im.alt = ''; im.draggable = false;
+    d.appendChild(im);
+    return d;
+  }
+  function sparkle(d) {
+    for (let i = 0; i < 7; i++) {
+      const s = document.createElement('span'); s.className = 'spark'; s.textContent = '✦';
+      const a = (i / 7) * Math.PI * 2 + Math.random();
+      s.style.setProperty('--dx', Math.cos(a) * 46 + 'px'); s.style.setProperty('--dy', Math.sin(a) * 46 - 16 + 'px');
+      s.style.animationDelay = (0.25 + Math.random() * 0.2) + 's';
+      d.appendChild(s); setTimeout(() => s.remove(), 1500);
+    }
+  }
+  function renderScene(newIdx, walkIn, newDeco) {
+    const g = gardenIdx(), p = progress(), G = GARDENS[g];
+    scene.style.backgroundImage = 'url(' + IMG + G.bg + '.png)';
+    $('gname').textContent = G.name;
+    layer.innerHTML = '';
+    for (let i = 0; i < p; i++) {
+      const pc = G.pieces[i];
+      const el = pieceEl(pc.f, pc.x, pc.b, pc.h, i === newIdx ? 'grow' : '');
+      layer.appendChild(el);
+      if (i === newIdx) sparkle(el);
+    }
+    if (p >= 5) { const v = G.visitor; layer.appendChild(pieceEl(v.f, v.x, v.b, v.h, walkIn ? 'walk' : '')); }
+    const dch = S.deco[g];
+    if (decoOK[g] && dch != null) layer.appendChild(pieceEl(G.deco[dch], DECO_POS.x, DECO_POS.b, DECO_POS.h, newDeco ? 'grow' : ''));
+  }
+  function renderTitle() {
+    const g = gardenIdx();
+    $('title').textContent = gate() || S.done >= LEVELS.length
+      ? GARDENS[g].name + ' · Complete!'
+      : 'Garden ' + (g + 1) + ' · Level ' + (S.done % GARDEN_LEVELS + 1) + '/' + GARDEN_LEVELS;
+  }
+  function renderHud() {
+    $('hintcount').textContent = S.hints;
+    $('hintbtn').classList.toggle('off', S.hints <= 0);
+    $('jarcount').textContent = S.jar + '/5';
+  }
+
+  // ---------- Slots ----------
+  function buildSlots() {
+    slotsEl.innerHTML = '';
+    L.t.forEach((w) => {
+      const g = document.createElement('div'); g.className = 'word'; g.dataset.w = w;
+      for (let k = 0; k < w.length; k++) { const s = document.createElement('div'); s.className = 'slot'; s.style.setProperty('--i', k); g.appendChild(s); }
+      slotsEl.appendChild(g);
+    });
+    refreshSlots();
+  }
+  function refreshSlots(popWord, popLetter) {
+    slotsEl.querySelectorAll('.word').forEach((g) => {
+      const w = g.dataset.w, found = S.found.includes(w), k = S.hinted[w] || 0;
+      [...g.children].forEach((s, i) => {
+        s.classList.remove('pop');
+        if (found) { s.className = 'slot filled'; s.textContent = w[i]; }
+        else if (i < k) { s.className = 'slot hint'; s.textContent = w[i]; }
+        else { s.className = 'slot'; s.textContent = ''; }
+        if (popWord === w && found) { void s.offsetWidth; s.classList.add('pop'); }
+        if (popLetter === w && i === k - 1) { void s.offsetWidth; s.classList.add('pop'); }
+      });
+    });
+  }
+  // ---------- Wheel ----------
+  // How many rows the word slots need at slot size s within width avail.
+  function slotRows(s, avail) {
+    const g = s * 0.08, wg = s * 0.5;
+    let x = 0, rows = 1;
+    for (const w of L.t) {
+      const n = w.length * s + (w.length - 1) * g;
+      if (n > avail) return 99;
+      if (x === 0) x = n; else if (x + wg + n > avail) { rows++; x = n; } else x += wg + n;
+    }
+    return rows;
+  }
+  function layout() {
+    if (!L) return;
+    const bw = board.clientWidth, bh = board.clientHeight, avail = bw - 16;
+    const cap = Math.min(bw * 0.92, bh * 0.62), room = bh - 38 - 4 - 14;
+    let bestS = 22, bestW = 150, bestScore = -1;
+    for (let s = 46; s >= 22; s -= 2) {
+      const need = slotRows(s, avail) * s + (slotRows(s, avail) - 1) * s * 0.16 + 6;
+      const w = Math.max(150, Math.min(cap, room - need));
+      const score = w + s * 1.6;
+      if (score > bestScore) { bestScore = score; bestS = s; bestW = w; }
+    }
+    W = bestW;
+    slotsEl.style.setProperty('--s', bestS + 'px');
+    board.style.setProperty('--w', W + 'px');
+    const n = tiles.length;
+    TS = W * (n <= 4 ? 0.27 : 0.245); R = W * 0.335;
+    wheel.style.setProperty('--t', TS + 'px');
+    poly.setAttribute('stroke-width', TS * 0.22);
+    tiles.forEach(placeTile);
+    renderSel();
+  }
+  function slotXY(slot) {
+    const n = tiles.length, a = -Math.PI / 2 + (slot * 2 * Math.PI) / n;
+    return [W / 2 + R * Math.cos(a), W / 2 + R * Math.sin(a)];
+  }
+  function placeTile(t) { const [x, y] = slotXY(t.slot); t.el.style.left = x + 'px'; t.el.style.top = y + 'px'; }
+  function buildWheel() {
+    tiles.forEach((t) => t.el.remove());
+    tiles = [];
+    const chars = L.l.split('');
+    const slots = chars.map((_, i) => i).sort(() => Math.random() - 0.5);
+    chars.forEach((ch, i) => {
+      const el = document.createElement('div'); el.className = 'tile'; el.textContent = ch;
+      wheel.appendChild(el); tiles.push({ el, ch, slot: slots[i] });
+    });
+    // put the shuffle button above the tiles in stacking order
+    wheel.appendChild($('shuffle'));
+  }
+  function shuffleWheel() {
+    if (locked) return;
+    stopDemo(); sel = []; renderSel();
+    const n = tiles.length; let slots;
+    do { slots = tiles.map((_, i) => i).sort(() => Math.random() - 0.5); }
+    while (slots.every((s, i) => s === tiles[i].slot) && n > 1);
+    tiles.forEach((t, i) => { t.slot = slots[i]; placeTile(t); });
+    sfx.shuffle();
+  }
+  function hit(e) {
+    const r = wheel.getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top;
+    ptr = [px, py];
+    let best = -1, bd = TS * 0.46;
+    tiles.forEach((t, i) => { const [x, y] = slotXY(t.slot), d = Math.hypot(px - x, py - y); if (d < bd) { bd = d; best = i; } });
+    return best;
+  }
+  function renderSel() {
+    const path = demoOn ? demoSel : sel;
+    tiles.forEach((t, i) => t.el.classList.toggle('sel', path.includes(i)));
+    const pts = path.map((i) => slotXY(tiles[i].slot));
+    if (dragging && ptr && pts.length) pts.push(ptr);
+    poly.setAttribute('points', pts.map((p) => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' '));
+    if (curTimer) return;
+    if (demoOn) { setMsg('Swipe the letters to spell a word', 'msg'); return; }
+    cur.className = path.length ? 'on' : '';
+    cur.textContent = path.map((i) => tiles[i].ch).join('');
+  }
+  function setMsg(text, cls, ms) {
+    cur.className = cls; cur.textContent = text;
+    if (ms) {
+      if (curTimer) clearTimeout(curTimer);
+      curTimer = setTimeout(() => { curTimer = null; renderSel(); }, ms);
+    }
+  }
+
+  // ---------- Input ----------
+  wheel.addEventListener('pointerdown', (e) => {
+    if (locked || e.target.closest('#shuffle')) return;
+    stopDemo();
+    const i = hit(e); if (i < 0) return;
+    if (curTimer) { clearTimeout(curTimer); curTimer = null; }
+    try { wheel.setPointerCapture(e.pointerId); } catch (er) {}
+    dragging = true; sel = [i]; sfx.tap(0); renderSel();
+  });
+  wheel.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    const i = hit(e);
+    if (i >= 0) {
+      if (sel.length > 1 && i === sel[sel.length - 2]) { sel.pop(); sfx.tap(sel.length); }
+      else if (!sel.includes(i)) { sel.push(i); sfx.tap(sel.length); }
+    }
+    renderSel();
+  });
+  const endDrag = () => { if (!dragging) return; dragging = false; ptr = null; submit(); };
+  wheel.addEventListener('pointerup', endDrag);
+  wheel.addEventListener('pointercancel', endDrag);
+  $('shuffle').addEventListener('click', shuffleWheel);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (ov.classList.contains('show')) { if (e.key === 'Enter') { const b = panel.querySelector('.big'); if (b) b.click(); } return; }
+    if (locked || !L) return;
+    const k = e.key;
+    if (/^[a-zA-Z]$/.test(k)) {
+      stopDemo();
+      const ch = k.toLowerCase(), i = tiles.findIndex((t, idx) => t.ch === ch && !sel.includes(idx));
+      if (i >= 0) { if (curTimer) { clearTimeout(curTimer); curTimer = null; } sel.push(i); sfx.tap(sel.length); renderSel(); }
+    } else if (k === 'Backspace') { sel.pop(); renderSel(); e.preventDefault(); }
+    else if (k === 'Enter') { submit(); e.preventDefault(); }
+    else if (k === 'Escape') { sel = []; renderSel(); }
+    else if (k === ' ') { shuffleWheel(); e.preventDefault(); }
+  });
+
+  // ---------- Submit ----------
+  function submit() {
+    if (locked) return;
+    const word = sel.map((i) => tiles[i].ch).join('');
+    sel = []; renderSel();
+    if (word.length < 2) return;
+    if (L.t.includes(word)) {
+      if (S.found.includes(word)) { setMsg('Already found', 'msg', 900); sfx.dupe(); return; }
+      S.found.push(word); save(); S.tut = 1;
+      sfx.good(); setMsg(word.toUpperCase() + ' ✓', 'good', 900); refreshSlots(word);
+      if (L.t.every((w) => S.found.includes(w))) finishLevel();
+      return;
+    }
+    if (L.b.includes(word)) {
+      if (S.bonus.includes(word)) { setMsg('Already found', 'msg', 900); sfx.dupe(); return; }
+      S.bonus.push(word); S.jar++;
+      let text = 'Bonus word!';
+      if (S.jar >= 5) { S.jar = 0; S.hints++; text = 'Bonus word! +1 hint'; $('hintbtn').classList.remove('bump'); void $('hintbtn').offsetWidth; $('hintbtn').classList.add('bump'); }
+      $('jar').classList.remove('bump'); void $('jar').offsetWidth; $('jar').classList.add('bump');
+      save(); renderHud(); sfx.bonus(); setMsg(text, 'bonus', 1200);
+      return;
+    }
+    sfx.bad(); setMsg(word.length < 3 ? 'Too short' : 'Not in this puzzle', 'bad', 900);
+  }
+
+  // ---------- Hints ----------
+  function useHint() {
+    if (locked || !L) return;
+    stopDemo();
+    if (S.hints <= 0) { setMsg('Find 5 bonus words to earn a hint', 'msg', 1600); sfx.dupe(); return; }
+    const open = L.t.filter((w) => !S.found.includes(w) && (S.hinted[w] || 0) < w.length - 1);
+    if (!open.length) { setMsg('No more hints for this level', 'msg', 1400); sfx.dupe(); return; }
+    open.sort((a, b) => (S.hinted[a] || 0) - (S.hinted[b] || 0) || a.length - b.length);
+    const w = open[0];
+    S.hinted[w] = (S.hinted[w] || 0) + 1; S.hints--; save(); renderHud(); sfx.hint();
+    refreshSlots(null, w);
+    setMsg('Hint: a word starts with ' + w[0].toUpperCase(), 'msg', 1500);
+  }
+  $('hintbtn').addEventListener('click', useHint);
+
+  // ---------- Tutorial demo ----------
+  function stopDemo() {
+    if (!demoOn) return;
+    demoOn = false; demoSel = []; clearTimeout(demoTimer); hand.style.opacity = 0; renderSel();
+  }
+  function startDemo() {
+    if (S.tut || S.done !== 0 || S.found.length || !L) return;
+    const word = L.t[0], used = [], idxs = [];
+    for (const ch of word) { const i = tiles.findIndex((t, k) => t.ch === ch && !used.includes(k)); used.push(i); idxs.push(i); }
+    demoOn = true;
+    const hs = () => hand.offsetWidth;
+    const goto = (i) => {
+      const [x, y] = slotXY(tiles[i].slot), r = wheel.getBoundingClientRect(), b = board.getBoundingClientRect();
+      hand.style.left = (r.left - b.left + x - hs() * 0.72) + 'px';
+      hand.style.top = (r.top - b.top + y - hs() * 0.08) + 'px';
+    };
+    const step = (k) => {
+      if (!demoOn) return;
+      hand.style.opacity = 1; goto(idxs[k]); demoSel = idxs.slice(0, k + 1); renderSel();
+      if (k < idxs.length - 1) demoTimer = setTimeout(() => step(k + 1), 700);
+      else demoTimer = setTimeout(() => { demoSel = []; hand.style.opacity = 0; renderSel(); demoTimer = setTimeout(() => step(0), 1500); }, 1100);
+    };
+    demoTimer = setTimeout(() => step(0), 500);
+  }
+
+  // ---------- Level flow ----------
+  function startLevel() {
+    hideOv(); locked = false;
+    L = LEVELS[S.done];
+    sel = []; demoSel = [];
+    renderTitle(); renderScene(); renderHud();
+    buildWheel(); buildSlots(); layout();
+    startDemo();
+  }
+  const PRAISE = ['Lovely!', 'Well done!', 'Sprouting!', 'Blooming!', 'Nice work!', 'Beautiful!'];
+  function finishLevel() {
+    locked = true;
+    const bonusCount = S.bonus.length;
+    S.done++; S.found = []; S.bonus = []; S.hinted = {}; save();
+    const idx = (S.done - 1) % GARDEN_LEVELS;
+    renderTitleFor(S.done);
+    growScene(S.done, idx);
+    setTimeout(() => sfx.grow(), 150);
+    setTimeout(() => showLevelDone(bonusCount), 1500);
+  }
+  function renderTitleFor(done) {
+    const g = Math.floor((done - 1) / GARDEN_LEVELS);
+    $('title').textContent = GARDENS[g].name + ' · Level ' + ((done - 1) % GARDEN_LEVELS + 1) + '/' + GARDEN_LEVELS + ' ✓';
+  }
+  function growScene(done, idx) {
+    // draw the garden the finished level belongs to (not the next one)
+    const g = Math.floor((done - 1) / GARDEN_LEVELS), G = GARDENS[g];
+    scene.style.backgroundImage = 'url(' + IMG + G.bg + '.png)';
+    $('gname').textContent = G.name;
+    layer.innerHTML = '';
+    for (let i = 0; i <= idx; i++) {
+      const pc = G.pieces[i];
+      const el = pieceEl(pc.f, pc.x, pc.b, pc.h, i === idx ? 'grow' : '');
+      layer.appendChild(el); if (i === idx) sparkle(el);
+    }
+    if (idx >= 4) { const v = G.visitor; layer.appendChild(pieceEl(v.f, v.x, v.b, v.h, idx === 4 ? 'walk' : '')); }
+    if (decoOK[g] && S.deco[g] != null) layer.appendChild(pieceEl(G.deco[S.deco[g]], DECO_POS.x, DECO_POS.b, DECO_POS.h, ''));
+  }
+  const dotsHtml = (n) => '<div class="dots">' + Array.from({ length: GARDEN_LEVELS }, (_, i) => '<i class="' + (i < n ? 'on' : '') + '"></i>').join('') + '</div>';
+  function showOv(html) { panel.innerHTML = html; ov.classList.add('show'); }
+  function hideOv() { ov.classList.remove('show'); }
+  function showLevelDone(bonusCount) {
+    const done = S.done, inGarden = (done - 1) % GARDEN_LEVELS + 1;
+    if (inGarden === GARDEN_LEVELS || done >= LEVELS.length) { showGardenDone(Math.floor((done - 1) / GARDEN_LEVELS)); return; }
+    sfx.finish();
+    showOv('<h2>' + PRAISE[rnd(PRAISE.length)] + '</h2>' +
+      '<p>Level ' + inGarden + ' complete' + (bonusCount ? ' · ' + bonusCount + ' bonus word' + (bonusCount > 1 ? 's' : '') + ' found' : '') + '</p>' +
+      dotsHtml(inGarden) + '<p>Garden progress ' + inGarden + '/' + GARDEN_LEVELS + '</p>' +
+      '<button class="big" id="next">Next level &#9654;</button>');
+    $('next').addEventListener('click', startLevel);
+  }
+  function showGardenDone(g) {
+    sfx.finish();
+    const G = GARDENS[g], allDone = S.done >= LEVELS.length;
+    if (decoOK[g] && S.deco[g] == null) {
+      showOv('<h2>Garden complete!</h2><p>Choose a decoration for your ' + G.name + '</p>' + dotsHtml(GARDEN_LEVELS) +
+        '<div class="decos"><button class="deco" data-k="0"><img src="' + IMG + G.deco[0] + '.png" alt="Decoration A" /></button>' +
+        '<button class="deco" data-k="1"><img src="' + IMG + G.deco[1] + '.png" alt="Decoration B" /></button></div>');
+      panel.querySelectorAll('.deco').forEach((b) => b.addEventListener('click', () => {
+        S.deco[g] = +b.dataset.k; save(); sfx.grow();
+        layer.appendChild(pieceEl(G.deco[S.deco[g]], DECO_POS.x, DECO_POS.b, DECO_POS.h, 'grow'));
+        setTimeout(() => showGardenDone(g), 900);
+      }));
+      return;
+    }
+    if (allDone) {
+      showOv('<h2>Every garden is in bloom!</h2><p>You finished all ' + LEVELS.length + ' levels. Thanks for playing!</p>' + dotsHtml(GARDEN_LEVELS) +
+        '<button class="big" id="again">Play again</button>');
+      $('again').addEventListener('click', () => { const d = S.hints; S = fresh(); S.hints = d; save(); startLevel(); });
+    } else if (ready[g + 1]) {
+      showOv('<h2>Garden complete!</h2><p>Your ' + G.name + ' is in full bloom.</p>' + dotsHtml(GARDEN_LEVELS) +
+        '<button class="big" id="next">Next garden &#9654;</button>');
+      $('next').addEventListener('click', startLevel);
+    } else {
+      showOv('<h2>Garden complete!</h2><p>Your ' + G.name + ' is in full bloom. More gardens are on the way — check back soon!</p>' + dotsHtml(GARDEN_LEVELS) +
+        '<button class="big alt" id="replay">Replay this garden</button>');
+      $('replay').addEventListener('click', () => { S.done = g * GARDEN_LEVELS; S.deco[g] = null; S.found = []; S.bonus = []; S.hinted = {}; save(); startLevel(); });
+    }
+  }
+
+  // ---------- Boot ----------
+  let rz = null;
+  window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(layout, 60); });
+  if (window.ResizeObserver) new ResizeObserver(() => { clearTimeout(rz); rz = setTimeout(layout, 60); }).observe(board);
+
+  const critical = ['garden1-backyard', 'wheel-base', 'tile-normal', 'tile-selected', 'slot-empty', 'slot-filled', 'icon-shuffle', 'icon-hint', 'icon-bonus-jar', 'icon-hand']
+    .concat(FILES[0] ? Object.values(FILES[0]) : []);
+  const boot = Promise.all(critical.map(probe));
+  const timeout = new Promise((r) => setTimeout(r, 5000));
+  Promise.race([boot, timeout]).then(() => {
+    $('loading').classList.add('gone');
+    renderHud();
+    if (S.done >= LEVELS.length || gate()) {
+      const g = gardenIdx(); L = LEVELS[Math.min(S.done, LEVELS.length - 1)];
+      renderTitle(); renderScene(); renderHud(); buildWheel(); buildSlots(); layout(); locked = true;
+      showGardenDone(g);
+    } else startLevel();
+  });
+})();
+</script>
+</body>
+</html>

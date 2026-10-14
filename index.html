@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PlayItNow — Free Browser Games</title>
-  <meta name="description" content="Free browser games, no download required — a Slither.io-style snake game, an Agar.io-style eat &amp; grow game, and a Vampire Survivors-style bullet heaven." />
+  <title>Free Online Games, No Download — Play Instantly | PlayItNow</title>
+  <meta name="description" content="Play 12 free online games in your browser — arcade, puzzle, word, coloring, and shop-management games. No download, no sign-up, instant play on mobile or desktop." />
   <link rel="canonical" href="https://playitnow.io/" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,6 +13,108 @@
 
   <link rel="icon" type="image/svg+xml" href="assets/playitnow-icon.svg" />
   <link rel="icon" type="image/png" sizes="192x192" href="assets/playitnow-icon.png" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://playitnow.io/#org",
+      "name": "PlayItNow",
+      "url": "https://playitnow.io/",
+      "logo": "https://playitnow.io/assets/playitnow-icon.png",
+      "email": "contact@playitnow.io"
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://playitnow.io/#website",
+      "name": "PlayItNow",
+      "url": "https://playitnow.io/",
+      "publisher": {
+        "@id": "https://playitnow.io/#org"
+      }
+    },
+    {
+      "@type": "ItemList",
+      "name": "PlayItNow games",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Neon Slither",
+          "url": "https://playitnow.io/games/neon-slither"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Neon Blob",
+          "url": "https://playitnow.io/games/neon-blob"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Neon Onslaught",
+          "url": "https://playitnow.io/games/neon-onslaught"
+        },
+        {
+          "@type": "ListItem",
+          "position": 4,
+          "name": "Neon Pop",
+          "url": "https://playitnow.io/games/neon-pop"
+        },
+        {
+          "@type": "ListItem",
+          "position": 5,
+          "name": "Neon Stack",
+          "url": "https://playitnow.io/games/neon-stack"
+        },
+        {
+          "@type": "ListItem",
+          "position": 6,
+          "name": "Neon Dino",
+          "url": "https://playitnow.io/games/neon-dino"
+        },
+        {
+          "@type": "ListItem",
+          "position": 7,
+          "name": "Neon Climb",
+          "url": "https://playitnow.io/games/neon-climb"
+        },
+        {
+          "@type": "ListItem",
+          "position": 8,
+          "name": "Buzzy Bear's Honey Shop",
+          "url": "https://playitnow.io/games/honey-shop"
+        },
+        {
+          "@type": "ListItem",
+          "position": 9,
+          "name": "Penguin Fish Market",
+          "url": "https://playitnow.io/games/fish-market"
+        },
+        {
+          "@type": "ListItem",
+          "position": 10,
+          "name": "Mini Art Studio",
+          "url": "https://playitnow.io/games/coloring-studio"
+        },
+        {
+          "@type": "ListItem",
+          "position": 11,
+          "name": "Hangman",
+          "url": "https://playitnow.io/games/hangman"
+        },
+        {
+          "@type": "ListItem",
+          "position": 12,
+          "name": "Word Connect Online",
+          "url": "https://playitnow.io/games/word-connect"
+        }
+      ]
+    }
+  ]
+}
+  </script>
   <link rel="stylesheet" href="css/style.css" />
 
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6530474312289669"
@@ -34,9 +136,9 @@
 
   <main>
     <p class="eyebrow">Free &middot; No download &middot; Play in browser</p>
-    <h1>Free games, ready when you are</h1>
+    <h1>Free Online Games</h1>
     <p class="subhead">
-      Pick a game below and start playing instantly — no installs, no sign-up.
+      Pick a game below and start playing instantly in your browser — no download, no sign-up.
     </p>
 
     <!-- Ad slot: above the fold, optional -->
@@ -63,9 +165,19 @@
       card + one games/ page, or move that page's content to index.html
       directly (see README "Going single-game" section).
     -->
-    <div class="game-grid">
+    <div class="filter-chips" role="group" aria-label="Filter games by type">
+      <button type="button" class="filter-chip" data-filter="all" aria-pressed="true">All games</button>
+      <button type="button" class="filter-chip" data-filter="arcade" aria-pressed="false">Arcade &amp; action</button>
+      <button type="button" class="filter-chip" data-filter="puzzle" aria-pressed="false">Puzzle</button>
+      <button type="button" class="filter-chip" data-filter="word" aria-pressed="false">Word</button>
+      <button type="button" class="filter-chip" data-filter="coloring" aria-pressed="false">Coloring</button>
+      <button type="button" class="filter-chip" data-filter="character" aria-pressed="false">Character games</button>
+    </div>
+    <p class="filter-count" id="filter-count" aria-live="polite">Showing all 12 games</p>
 
-      <a href="/games/neon-slither" class="game-card">
+    <div class="game-grid" id="game-grid">
+
+      <a href="/games/neon-slither" class="game-card" data-cats="arcade">
         <div class="game-card__thumb"><img src="assets/neon-slither-icon.svg" alt="Neon Slither" /></div>
         <div class="game-card__body">
           <p class="game-card__title">Neon Slither</p>
@@ -73,7 +185,7 @@
         </div>
       </a>
 
-      <a href="/games/neon-blob" class="game-card">
+      <a href="/games/neon-blob" class="game-card" data-cats="arcade">
         <div class="game-card__thumb"><img src="assets/neon-blob-icon.svg" alt="Neon Blob" /></div>
         <div class="game-card__body">
           <p class="game-card__title">Neon Blob</p>
@@ -81,7 +193,7 @@
         </div>
       </a>
 
-      <a href="/games/neon-onslaught" class="game-card">
+      <a href="/games/neon-onslaught" class="game-card" data-cats="arcade">
         <div class="game-card__thumb"><img src="assets/neon-onslaught-icon.svg" alt="Neon Onslaught" /></div>
         <div class="game-card__body">
           <p class="game-card__title">Neon Onslaught</p>
@@ -89,7 +201,7 @@
         </div>
       </a>
 
-      <a href="/games/neon-pop" class="game-card">
+      <a href="/games/neon-pop" class="game-card" data-cats="puzzle">
         <div class="game-card__thumb"><img src="assets/neon-pop-icon.svg" alt="Neon Pop" /></div>
         <div class="game-card__body">
           <p class="game-card__title">Neon Pop</p>
@@ -97,7 +209,7 @@
         </div>
       </a>
 
-      <a href="/games/neon-stack" class="game-card">
+      <a href="/games/neon-stack" class="game-card" data-cats="arcade">
         <div class="game-card__thumb"><img src="assets/neon-stack-icon.svg" alt="Neon Stack" /></div>
         <div class="game-card__body">
           <p class="game-card__title">Neon Stack</p>
@@ -105,7 +217,7 @@
         </div>
       </a>
 
-      <a href="/games/neon-dino" class="game-card">
+      <a href="/games/neon-dino" class="game-card" data-cats="arcade">
         <div class="game-card__thumb"><img src="assets/neon-dino-icon.svg" alt="Neon Dino" /></div>
         <div class="game-card__body">
           <p class="game-card__title">Neon Dino</p>
@@ -113,7 +225,7 @@
         </div>
       </a>
 
-      <a href="/games/neon-climb" class="game-card">
+      <a href="/games/neon-climb" class="game-card" data-cats="arcade">
         <div class="game-card__thumb"><img src="assets/neon-climb-icon.svg" alt="Neon Climb" /></div>
         <div class="game-card__body">
           <p class="game-card__title">Neon Climb</p>
@@ -121,7 +233,7 @@
         </div>
       </a>
 
-      <a href="/games/honey-shop" class="game-card">
+      <a href="/games/honey-shop" class="game-card" data-cats="character">
         <div class="game-card__thumb"><img class="thumb-contain" src="assets/honey-shop-thumb.png" alt="Buzzy Bear's Honey Shop" /></div>
         <div class="game-card__body">
           <p class="game-card__title">Buzzy Bear's Honey Shop</p>
@@ -129,7 +241,7 @@
         </div>
       </a>
 
-      <a href="/games/fish-market" class="game-card">
+      <a href="/games/fish-market" class="game-card" data-cats="character">
         <div class="game-card__thumb"><img class="thumb-contain" src="assets/fish-market-thumb.png" alt="Penguin Fish Market" /></div>
         <div class="game-card__body">
           <p class="game-card__title">Penguin Fish Market</p>
@@ -137,7 +249,7 @@
         </div>
       </a>
 
-      <a href="/games/coloring-studio" class="game-card">
+      <a href="/games/coloring-studio" class="game-card" data-cats="coloring">
         <div class="game-card__thumb"><img class="thumb-contain" src="assets/coloring-studio-thumb.png" alt="Mini Art Studio" /></div>
         <div class="game-card__body">
           <p class="game-card__title">Mini Art Studio</p>
@@ -145,11 +257,19 @@
         </div>
       </a>
 
-      <a href="/games/hangman" class="game-card">
+      <a href="/games/hangman" class="game-card" data-cats="word puzzle">
         <div class="game-card__thumb"><img class="thumb-contain" src="assets/hangman-thumb.png" alt="Hangman" /></div>
         <div class="game-card__body">
           <p class="game-card__title">Hangman</p>
           <p class="game-card__tag">Classic word-guessing game</p>
+        </div>
+      </a>
+
+      <a href="/games/word-connect" class="game-card" data-cats="word puzzle">
+        <div class="game-card__thumb"><span class="game-card__badge">New</span><img class="thumb-contain" src="assets/word-connect-thumb.png" alt="Word Connect Online" /></div>
+        <div class="game-card__body">
+          <p class="game-card__title">Word Connect Online</p>
+          <p class="game-card__tag">Swipe letters to make words and grow a garden</p>
         </div>
       </a>
 
@@ -169,11 +289,16 @@
     <section class="hub-info">
       <h2>Your go-to spot for quick, free browser games</h2>
       <p>
-        No downloads, no accounts, no waiting on install screens — just pick a
-        game and start playing. Everything here runs directly in your
-        browser, so it works the same whether you're on a laptop, a phone,
-        a tablet, or a school Chromebook. We're a small, growing library
-        right now, with more games added as we build and test them.
+        PlayItNow is a small, hand-built library of free online games —
+        arcade action, puzzles, word games, a coloring book, and shop-management
+        games with illustrated characters. There's nothing to download and no
+        account to make: pick a game and start playing. Everything runs
+        directly in your browser, so it works the same on a laptop, a phone,
+        a tablet, or a school Chromebook. New here? Try
+        <a href="/games/word-connect">Word Connect</a> for a relaxing letter puzzle,
+        <a href="/games/neon-dino">Neon Dino</a> for a one-button runner, or
+        <a href="/games/honey-shop">Buzzy Bear's Honey Shop</a> if you like
+        gathering, stocking, and selling.
       </p>
 
       <h3>What makes a game "browser-based"?</h3>
@@ -187,11 +312,11 @@
 
       <h3>Explore by category</h3>
       <ul class="plain">
-        <li><strong>Arcade &amp; action</strong> — fast, reflex-driven games built for quick sessions. <a href="/games/neon-slither">Try Neon Slither</a>, <a href="/games/neon-blob">Neon Blob</a>, <a href="/games/neon-onslaught">Neon Onslaught</a>, <a href="/games/neon-stack">Neon Stack</a>, <a href="/games/neon-dino">Neon Dino</a>, or <a href="/games/neon-climb">Neon Climb</a>.</li>
+        <li><strong>Arcade &amp; action</strong> — fast, reflex-driven games built for quick sessions. <a href="/arcade-games">Browse all arcade games</a>, or try <a href="/games/neon-slither">Neon Slither</a>, <a href="/games/neon-blob">Neon Blob</a>, <a href="/games/neon-onslaught">Neon Onslaught</a>, <a href="/games/neon-stack">Neon Stack</a>, <a href="/games/neon-dino">Neon Dino</a>, or <a href="/games/neon-climb">Neon Climb</a>.</li>
         <li><strong>Puzzle</strong> — slower-paced, brain-first games. <a href="/games/neon-pop">Try Neon Pop</a>.</li>
-        <li><strong>Character games</strong> — illustrated, story-driven games with original characters. <a href="/games/honey-shop">Try Buzzy Bear's Honey Shop</a> or <a href="/games/fish-market">Penguin Fish Market</a>.</li>
+        <li><strong>Character games</strong> — illustrated shop games with original characters, in the style of gather-stock-sell games like Monkey Mart (<a href="/games-like-monkey-mart">see how they compare</a>). <a href="/games/honey-shop">Try Buzzy Bear's Honey Shop</a> or <a href="/games/fish-market">Penguin Fish Market</a>.</li>
         <li><strong>Coloring &amp; creativity</strong> — relaxing, no-pressure creative games. <a href="/games/coloring-studio">Try Mini Art Studio</a>.</li>
-        <li><strong>Word games</strong> — guess, spell, and think. <a href="/games/hangman">Try Hangman</a>.</li>
+        <li><strong>Word games</strong> — guess, spell, and think. Try <a href="/games/word-connect">Word Connect</a> or <a href="/games/hangman">Hangman</a>.</li>
         <li><strong>More genres</strong> — we're actively testing new games and categories; check back often.</li>
       </ul>
 
@@ -247,6 +372,26 @@
     </div>
   </footer>
 
+  <script>
+    (function () {
+      var chips = document.querySelectorAll('.filter-chip');
+      var cards = document.querySelectorAll('#game-grid .game-card');
+      var count = document.getElementById('filter-count');
+      var labels = { all: 'all', arcade: 'arcade & action', puzzle: 'puzzle', word: 'word', coloring: 'coloring', character: 'character' };
+      chips.forEach(function (chip) {
+        chip.addEventListener('click', function () {
+          var f = chip.getAttribute('data-filter'), shown = 0;
+          chips.forEach(function (c) { c.setAttribute('aria-pressed', c === chip ? 'true' : 'false'); });
+          cards.forEach(function (card) {
+            var match = f === 'all' || (card.getAttribute('data-cats') || '').split(' ').indexOf(f) !== -1;
+            card.hidden = !match;
+            if (match) shown++;
+          });
+          count.textContent = f === 'all' ? 'Showing all ' + shown + ' games' : 'Showing ' + shown + ' ' + labels[f] + ' game' + (shown === 1 ? '' : 's');
+        });
+      });
+    })();
+  </script>
   <script src="js/main.js"></script>
 </body>
 </html>

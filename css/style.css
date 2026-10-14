@@ -554,3 +554,85 @@ footer {
 }
 
 .faq-item ul { padding-left: 2.2rem; }
+/* =========================================================
+   Browse & discovery: filter chips, play button, related games
+   ========================================================= */
+.filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1.4rem 0 0;
+}
+.filter-chip {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink-dim);
+  background: var(--stage-raised);
+  border: 1px solid var(--stage-line);
+  border-radius: 999px;
+  padding: 0.45rem 0.95rem;
+  cursor: pointer;
+  width: auto;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.filter-chip:hover { background: var(--stage-line); color: var(--ink); }
+.filter-chip[aria-pressed="true"] {
+  background: var(--gold);
+  color: #1a1226;
+  border-color: var(--gold);
+}
+.filter-count { font-size: 0.8rem; color: var(--ink-dim); margin: 0.7rem 0 0; }
+.game-card[hidden] { display: none; }
+
+.game-card__badge {
+  position: absolute;
+  top: 0.55rem;
+  left: 0.55rem;
+  z-index: 2;
+  font-family: var(--font-display);
+  font-size: 0.5rem;
+  letter-spacing: 0.08em;
+  color: #1a1226;
+  background: var(--coral);
+  border-radius: 999px;
+  padding: 0.28rem 0.55rem;
+}
+
+.play-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  font-size: 1rem;
+  color: #1a1226;
+  background: var(--gold);
+  border-radius: 999px;
+  padding: 0.7rem 1.4rem;
+  margin: 0 0 1rem;
+  text-decoration: none;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.25);
+}
+.play-cta:hover { background: var(--coral); color: #fff; text-decoration: none; }
+#play { scroll-margin-top: 0.8rem; }
+
+.related-games { margin: 1.8rem 0 0.4rem; }
+.related-games h2 { margin-top: 0; }
+.related-games .game-grid { margin: 1rem 0 0.6rem; }
+.related-games__more { font-size: 0.9rem; margin: 0.4rem 0 0; }
+
+.hub-list { list-style: none; padding: 0; margin: 1rem 0 2rem; display: grid; gap: 0.9rem; }
+.hub-list li {
+  background: var(--stage-raised);
+  border: 1px solid var(--stage-line);
+  border-radius: var(--radius);
+  padding: 1rem 1.2rem;
+}
+.hub-list h3 { margin: 0 0 0.3rem; }
+.hub-list p { margin: 0 0 0.5rem; }
+
+/* keep the game in reach on phones: smaller hero art */
+@media (max-width: 600px) {
+  main h1 img { max-height: 72px !important; width: auto !important; }
+  .cabinet { padding: 8px; }
+}
