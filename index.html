@@ -4,12 +4,28 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Free Online Games, No Download — Play Instantly | PlayItNow</title>
-  <meta name="description" content="Play 12 free online games in your browser — arcade, puzzle, word, coloring, and shop-management games. No download, no sign-up, instant play on mobile or desktop." />
+  <meta name="description" content="Play 12 free online games in your browser—arcade, puzzle, word, coloring, and shop management. No download or sign-up; play on mobile or desktop." />
   <link rel="canonical" href="https://playitnow.io/" />
+  <meta property="og:locale" content="en_US" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="PlayItNow" />
+  <meta property="og:title" content="Free Online Games, No Download — Play Instantly | PlayItNow" />
+  <meta property="og:description" content="Play 12 free online games in your browser—arcade, puzzle, word, coloring, and shop management. No download or sign-up; play on mobile or desktop." />
+  <meta property="og:url" content="https://playitnow.io/" />
+  <meta property="og:image" content="https://playitnow.io/assets/screenshots/neon-slither-gameplay.jpg" />
+  <meta property="og:image:type" content="image/jpeg" />
+  <meta property="og:image:width" content="1408" />
+  <meta property="og:image:height" content="892" />
+  <meta property="og:image:alt" content="PlayItNow free browser games" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Free Online Games, No Download — Play Instantly | PlayItNow" />
+  <meta name="twitter:description" content="Play 12 free online games in your browser—arcade, puzzle, word, coloring, and shop management. No download or sign-up; play on mobile or desktop." />
+  <meta name="twitter:image" content="https://playitnow.io/assets/screenshots/neon-slither-gameplay.jpg" />
+  <meta name="twitter:image:alt" content="PlayItNow free browser games" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
 
   <link rel="icon" type="image/svg+xml" href="assets/playitnow-icon.svg" />
   <link rel="icon" type="image/png" sizes="192x192" href="assets/playitnow-icon.png" />
@@ -141,30 +157,7 @@
       Pick a game below and start playing instantly in your browser — no download, no sign-up.
     </p>
 
-    <!-- Ad slot: above the fold, optional -->
-    <div class="ad-slot">
-      <ins class="adsbygoogle"
-           style="display:block"
-           data-ad-client="ca-pub-6530474312289669"
-           data-ad-slot="6370654530"
-           data-ad-format="auto"
-           data-full-width-responsive="true"></ins>
-      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-    </div>
-
-    <!--
-      GAME GRID — testing setup.
-      Each card links to a page in /games/. To add a game:
-        1. Copy games/game-template.html to games/your-slug.html
-        2. Edit its iframe src + title
-        3. Add a matching <a class="game-card"> block below
-
-      To remove a game: delete its card here and its file in /games/.
-
-      When you're ready to go single-game on a new domain, keep just one
-      card + one games/ page, or move that page's content to index.html
-      directly (see README "Going single-game" section).
-    -->
+    <!-- Game directory -->
     <div class="filter-chips" role="group" aria-label="Filter games by type">
       <button type="button" class="filter-chip" data-filter="all" aria-pressed="true">All games</button>
       <button type="button" class="filter-chip" data-filter="arcade" aria-pressed="false">Arcade &amp; action</button>
@@ -178,7 +171,7 @@
     <div class="game-grid" id="game-grid">
 
       <a href="/games/neon-slither" class="game-card" data-cats="arcade">
-        <div class="game-card__thumb"><img src="assets/neon-slither-icon.svg" alt="Neon Slither" /></div>
+        <div class="game-card__thumb"><img src="assets/neon-slither-icon.svg" alt="Neon Slither" decoding="async" /></div>
         <div class="game-card__body">
           <p class="game-card__title">Neon Slither</p>
           <p class="game-card__tag">Slither.io-style snake game</p>
@@ -186,7 +179,7 @@
       </a>
 
       <a href="/games/neon-blob" class="game-card" data-cats="arcade">
-        <div class="game-card__thumb"><img src="assets/neon-blob-icon.svg" alt="Neon Blob" /></div>
+        <div class="game-card__thumb"><img src="assets/neon-blob-icon.svg" alt="Neon Blob" decoding="async" /></div>
         <div class="game-card__body">
           <p class="game-card__title">Neon Blob</p>
           <p class="game-card__tag">Agar.io-style eat &amp; grow</p>
@@ -194,7 +187,7 @@
       </a>
 
       <a href="/games/neon-onslaught" class="game-card" data-cats="arcade">
-        <div class="game-card__thumb"><img src="assets/neon-onslaught-icon.svg" alt="Neon Onslaught" /></div>
+        <div class="game-card__thumb"><img src="assets/neon-onslaught-icon.svg" alt="Neon Onslaught" decoding="async" /></div>
         <div class="game-card__body">
           <p class="game-card__title">Neon Onslaught</p>
           <p class="game-card__tag">Vampire Survivors-style bullet heaven</p>
@@ -202,7 +195,7 @@
       </a>
 
       <a href="/games/neon-pop" class="game-card" data-cats="puzzle">
-        <div class="game-card__thumb"><img src="assets/neon-pop-icon.svg" alt="Neon Pop" /></div>
+        <div class="game-card__thumb"><img src="assets/neon-pop-icon.svg" alt="Neon Pop" loading="lazy" decoding="async" /></div>
         <div class="game-card__body">
           <p class="game-card__title">Neon Pop</p>
           <p class="game-card__tag">Bubble shooter puzzle game</p>
@@ -210,7 +203,7 @@
       </a>
 
       <a href="/games/neon-stack" class="game-card" data-cats="arcade">
-        <div class="game-card__thumb"><img src="assets/neon-stack-icon.svg" alt="Neon Stack" /></div>
+        <div class="game-card__thumb"><img src="assets/neon-stack-icon.svg" alt="Neon Stack" loading="lazy" decoding="async" /></div>
         <div class="game-card__body">
           <p class="game-card__title">Neon Stack</p>
           <p class="game-card__tag">One-tap stack tower game</p>
@@ -218,7 +211,7 @@
       </a>
 
       <a href="/games/neon-dino" class="game-card" data-cats="arcade">
-        <div class="game-card__thumb"><img src="assets/neon-dino-icon.svg" alt="Neon Dino" /></div>
+        <div class="game-card__thumb"><img src="assets/neon-dino-icon.svg" alt="Neon Dino" loading="lazy" decoding="async" /></div>
         <div class="game-card__body">
           <p class="game-card__title">Neon Dino</p>
           <p class="game-card__tag">Dino-style endless runner</p>
@@ -226,7 +219,7 @@
       </a>
 
       <a href="/games/neon-climb" class="game-card" data-cats="arcade">
-        <div class="game-card__thumb"><img src="assets/neon-climb-icon.svg" alt="Neon Climb" /></div>
+        <div class="game-card__thumb"><img src="assets/neon-climb-icon.svg" alt="Neon Climb" loading="lazy" decoding="async" /></div>
         <div class="game-card__body">
           <p class="game-card__title">Neon Climb</p>
           <p class="game-card__tag">Vertical climbing game</p>
@@ -234,7 +227,7 @@
       </a>
 
       <a href="/games/honey-shop" class="game-card" data-cats="character">
-        <div class="game-card__thumb"><img class="thumb-contain" src="assets/honey-shop-thumb.png" alt="Buzzy Bear's Honey Shop" /></div>
+        <div class="game-card__thumb"><img class="thumb-contain" src="assets/honey-shop-thumb.png" alt="Buzzy Bear's Honey Shop" loading="lazy" decoding="async" /></div>
         <div class="game-card__body">
           <p class="game-card__title">Buzzy Bear's Honey Shop</p>
           <p class="game-card__tag">Shop management game with real characters</p>
@@ -242,7 +235,7 @@
       </a>
 
       <a href="/games/fish-market" class="game-card" data-cats="character">
-        <div class="game-card__thumb"><img class="thumb-contain" src="assets/fish-market-thumb.png" alt="Penguin Fish Market" /></div>
+        <div class="game-card__thumb"><img class="thumb-contain" src="assets/fish-market-thumb.png" alt="Penguin Fish Market" loading="lazy" decoding="async" /></div>
         <div class="game-card__body">
           <p class="game-card__title">Penguin Fish Market</p>
           <p class="game-card__tag">Catch-and-sell shop game with real characters</p>
@@ -250,7 +243,7 @@
       </a>
 
       <a href="/games/coloring-studio" class="game-card" data-cats="coloring">
-        <div class="game-card__thumb"><img class="thumb-contain" src="assets/coloring-studio-thumb.png" alt="Mini Art Studio" /></div>
+        <div class="game-card__thumb"><img class="thumb-contain" src="assets/coloring-studio-thumb.png" alt="Mini Art Studio" loading="lazy" decoding="async" /></div>
         <div class="game-card__body">
           <p class="game-card__title">Mini Art Studio</p>
           <p class="game-card__tag">Relaxing coloring book game</p>
@@ -258,7 +251,7 @@
       </a>
 
       <a href="/games/hangman" class="game-card" data-cats="word puzzle">
-        <div class="game-card__thumb"><img class="thumb-contain" src="assets/hangman-thumb.png" alt="Hangman" /></div>
+        <div class="game-card__thumb"><img class="thumb-contain" src="assets/hangman-thumb.png" alt="Hangman" loading="lazy" decoding="async" /></div>
         <div class="game-card__body">
           <p class="game-card__title">Hangman</p>
           <p class="game-card__tag">Classic word-guessing game</p>
@@ -266,7 +259,7 @@
       </a>
 
       <a href="/games/word-connect" class="game-card" data-cats="word puzzle">
-        <div class="game-card__thumb"><span class="game-card__badge">New</span><img class="thumb-contain" src="assets/word-connect-thumb.png" alt="Word Connect Online" /></div>
+        <div class="game-card__thumb"><span class="game-card__badge">New</span><img class="thumb-contain" src="assets/word-connect-thumb.png" alt="Word Connect Online" loading="lazy" decoding="async" /></div>
         <div class="game-card__body">
           <p class="game-card__title">Word Connect Online</p>
           <p class="game-card__tag">Swipe letters to make words and grow a garden</p>

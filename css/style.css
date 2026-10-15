@@ -23,6 +23,18 @@
 
 * { box-sizing: border-box; }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 html { scroll-behavior: smooth; }
 
 body {
@@ -326,6 +338,7 @@ footer {
 .screenshot-gallery img {
   display: block;
   width: 100%;
+  height: auto;
   aspect-ratio: 16 / 9;
   object-fit: cover;
 }
@@ -424,19 +437,21 @@ footer {
 }
 .back-link:hover { color: var(--gold); }
 
-/* ---------- Ad slot placeholders ---------- */
+/* ---------- Ad slots ---------- */
 .ad-slot {
   display: block;
   width: 100%;
-  min-height: 90px;
-  border: 1px dashed var(--stage-line);
-  border-radius: 8px;
-  color: var(--ink-dim);
-  font-size: 0.8rem;
-  text-align: center;
-  padding: 1.2rem;
   margin: 1.6rem 0;
-  box-sizing: border-box;
+}
+
+/* AdSense can reserve a large blank block while an account or unit is
+   unfilled. Keep successful ads unchanged, but collapse confirmed empty ones. */
+.adsbygoogle[data-ad-status="unfilled"] {
+  display: none !important;
+}
+
+.ad-slot:has(.adsbygoogle[data-ad-status="unfilled"]) {
+  display: none;
 }
 
 /* ---------- Motion & mobile ---------- */

@@ -8,8 +8,8 @@ see "Going single-game" below to trim it down to just that one.
 
 ```
 index.html                    Homepage — grid of game cards
+404.html                      Branded hard-404 page for unknown routes
 games/
-  game-template.html          Blank template for adding a new game
   neon-slither.html           Neon Slither — Slither.io-style snake game
   neon-blob.html              Neon Blob — Agar.io-style eat & grow game
   neon-onslaught.html         Neon Onslaught — Vampire Survivors-style bullet heaven
@@ -58,13 +58,13 @@ and a mute toggle that remembers your preference via `localStorage`.
 
 ## Adding a new game
 
-1. Copy `games/game-template.html` to `games/your-game-slug.html` — use a
-   descriptive slug matching the `neon-*` naming pattern (e.g.
+1. Copy the wrapper page for the most similar existing game to
+   `games/your-game-slug.html` — use a descriptive slug (for example,
    `neon-something.html`), not `game-4.html`.
 2. Build the game itself as a self-contained file in `games/embed/`, then
    point the new page's iframe `src` at it.
-3. Update the new page's `<title>`, meta description, `[Game Name]` text,
-   and "how to play" copy.
+3. Update the new page's `<title>`, meta description, canonical URL,
+   structured data, game name, iframe URL, and "how to play" copy.
 4. Add a matching logo/icon pair in `assets/` (see the existing
    `neon-*-icon.svg` / `neon-*-logo.svg` files for the visual pattern).
 5. Add a `<a class="game-card">` block in `index.html`'s game grid pointing

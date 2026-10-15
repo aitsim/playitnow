@@ -223,9 +223,9 @@
     { stone: 'g3-stone', f1: 'g3-flower1', f2: 'g3-flower2', bush: 'g3-plant1', f3: 'g3-flower3', mush: 'g3-mushrooms', f4: 'g3-flower4', fern: 'g3-plant2', pond: 'g3-pond', tree: 'g3-tree' },
   ];
   const GARDENS = [
-    { name: 'Backyard Garden', bg: 'garden1-backyard', visitor: { f: 'visitor-hedgehog', x: 89, b: 2, h: 15 }, deco: ['deco-g1-a', 'deco-g1-b'] },
-    { name: 'Butterfly Meadow', bg: 'garden2-meadow', visitor: { f: 'visitor-butterfly', x: 58, b: 22, h: 15 }, deco: ['deco-g2-a', 'deco-g2-b'] },
-    { name: 'Moon Garden', bg: 'garden3-moon', visitor: { f: 'visitor-owl', x: 58, b: 30, h: 22 }, deco: ['deco-g3-a', 'deco-g3-b'] },
+    { name: 'Backyard Garden', bg: 'garden1-backyard.jpg', visitor: { f: 'visitor-hedgehog', x: 89, b: 2, h: 15 }, deco: ['deco-g1-a', 'deco-g1-b'] },
+    { name: 'Butterfly Meadow', bg: 'garden2-meadow.jpg', visitor: { f: 'visitor-butterfly', x: 58, b: 22, h: 15 }, deco: ['deco-g2-a', 'deco-g2-b'] },
+    { name: 'Moon Garden', bg: 'garden3-moon.jpg', visitor: { f: 'visitor-owl', x: 58, b: 30, h: 22 }, deco: ['deco-g3-a', 'deco-g3-b'] },
   ];
   const DECO_POS = { x: 92, b: 5, h: 30 };
   GARDENS.forEach((g, gi) => { g.pieces = LAYOUT.map((p) => Object.assign({ f: FILES[gi][p.role] }, p)); });
@@ -233,8 +233,9 @@
   const ready = [true, false, false];
   const decoOK = [false, false, false];
 
+  const imageUrl = (name) => IMG + name + (name.includes('.') ? '' : '.png');
   const probe = (name) => new Promise((res) => {
-    const im = new Image(); im.onload = () => res(true); im.onerror = () => res(false); im.src = IMG + name + '.png';
+    const im = new Image(); im.onload = () => res(true); im.onerror = () => res(false); im.src = imageUrl(name);
   });
 
   // ---------- Audio (synthesized) ----------
@@ -306,7 +307,7 @@
     d.className = 'piece' + (cls ? ' ' + cls : '');
     d.style.setProperty('--x', x); d.style.setProperty('--b', b); d.style.setProperty('--h', h);
     d.style.zIndex = String(1000 - Math.round(b * 10));
-    const im = new Image(); im.src = IMG + f + '.png'; im.alt = ''; im.draggable = false;
+    const im = new Image(); im.src = imageUrl(f); im.alt = ''; im.draggable = false;
     d.appendChild(im);
     return d;
   }
@@ -321,7 +322,7 @@
   }
   function renderScene(newIdx, walkIn, newDeco) {
     const g = gardenIdx(), p = progress(), G = GARDENS[g];
-    scene.style.backgroundImage = 'url(' + IMG + G.bg + '.png)';
+    scene.style.backgroundImage = 'url(' + imageUrl(G.bg) + ')';
     $('gname').textContent = G.name;
     layer.innerHTML = '';
     for (let i = 0; i < p; i++) {
@@ -565,6 +566,11 @@
     renderTitle(); renderScene(); renderHud();
     buildWheel(); buildSlots(); layout();
     startDemo();
+    const g = gardenIdx(), p = progress();
+    if (ready[g] && p < GARDEN_LEVELS) {
+      probe(FILES[g][LAYOUT[p].role]);
+      if (p === 4) probe(GARDENS[g].visitor.f);
+    }
   }
   const PRAISE = ['Lovely!', 'Well done!', 'Sprouting!', 'Blooming!', 'Nice work!', 'Beautiful!'];
   function finishLevel() {
@@ -584,7 +590,7 @@
   function growScene(done, idx) {
     // draw the garden the finished level belongs to (not the next one)
     const g = Math.floor((done - 1) / GARDEN_LEVELS), G = GARDENS[g];
-    scene.style.backgroundImage = 'url(' + IMG + G.bg + '.png)';
+    scene.style.backgroundImage = 'url(' + imageUrl(G.bg) + ')';
     $('gname').textContent = G.name;
     layer.innerHTML = '';
     for (let i = 0; i <= idx; i++) {
@@ -613,8 +619,8 @@
     const G = GARDENS[g], allDone = S.done >= LEVELS.length;
     if (decoOK[g] && S.deco[g] == null) {
       showOv('<h2>Garden complete!</h2><p>Choose a decoration for your ' + G.name + '</p>' + dotsHtml(GARDEN_LEVELS) +
-        '<div class="decos"><button class="deco" data-k="0"><img src="' + IMG + G.deco[0] + '.png" alt="Decoration A" /></button>' +
-        '<button class="deco" data-k="1"><img src="' + IMG + G.deco[1] + '.png" alt="Decoration B" /></button></div>');
+        '<div class="decos"><button class="deco" data-k="0"><img src="' + imageUrl(G.deco[0]) + '" alt="Decoration A" /></button>' +
+        '<button class="deco" data-k="1"><img src="' + imageUrl(G.deco[1]) + '" alt="Decoration B" /></button></div>');
       panel.querySelectorAll('.deco').forEach((b) => b.addEventListener('click', () => {
         S.deco[g] = +b.dataset.k; save(); sfx.grow();
         layer.appendChild(pieceEl(G.deco[S.deco[g]], DECO_POS.x, DECO_POS.b, DECO_POS.h, 'grow'));
@@ -642,8 +648,7 @@
   window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(layout, 60); });
   if (window.ResizeObserver) new ResizeObserver(() => { clearTimeout(rz); rz = setTimeout(layout, 60); }).observe(board);
 
-  const critical = ['garden1-backyard', 'wheel-base', 'tile-normal', 'tile-selected', 'slot-empty', 'slot-filled', 'icon-shuffle', 'icon-hint', 'icon-bonus-jar', 'icon-hand']
-    .concat(FILES[0] ? Object.values(FILES[0]) : []);
+  const critical = [GARDENS[0].bg, 'wheel-base', 'tile-normal', 'tile-selected', 'slot-empty', 'slot-filled', 'icon-shuffle', 'icon-hint', 'icon-bonus-jar', 'icon-hand'];
   const boot = Promise.all(critical.map(probe));
   const timeout = new Promise((r) => setTimeout(r, 5000));
   Promise.race([boot, timeout]).then(() => {

@@ -2,97 +2,78 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://playitnow.io/</loc>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
+    <lastmod>2026-10-14</lastmod>
   </url>
   <url>
     <loc>https://playitnow.io/games/neon-slither</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <lastmod>2026-10-14</lastmod>
   </url>
   <url>
     <loc>https://playitnow.io/games/neon-blob</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <lastmod>2026-10-14</lastmod>
   </url>
   <url>
     <loc>https://playitnow.io/games/neon-onslaught</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <lastmod>2026-10-14</lastmod>
   </url>
   <url>
     <loc>https://playitnow.io/games/neon-pop</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <lastmod>2026-10-14</lastmod>
   </url>
   <url>
     <loc>https://playitnow.io/games/neon-stack</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <lastmod>2026-10-14</lastmod>
   </url>
   <url>
     <loc>https://playitnow.io/games/neon-dino</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <lastmod>2026-10-14</lastmod>
   </url>
   <url>
     <loc>https://playitnow.io/games/neon-climb</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <lastmod>2026-10-14</lastmod>
   </url>
   <url>
     <loc>https://playitnow.io/games/honey-shop</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <lastmod>2026-10-14</lastmod>
   </url>
   <url>
     <loc>https://playitnow.io/games/fish-market</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <lastmod>2026-10-14</lastmod>
   </url>
   <url>
     <loc>https://playitnow.io/games/coloring-studio</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <lastmod>2026-10-14</lastmod>
   </url>
   <url>
     <loc>https://playitnow.io/games/hangman</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <lastmod>2026-10-14</lastmod>
   </url>
   <url>
     <loc>https://playitnow.io/games/word-connect</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <lastmod>2026-10-14</lastmod>
   </url>
   <url>
     <loc>https://playitnow.io/arcade-games</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <lastmod>2026-10-14</lastmod>
   </url>
   <url>
     <loc>https://playitnow.io/games-like-monkey-mart</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <lastmod>2026-10-14</lastmod>
   </url>
   <url>
     <loc>https://playitnow.io/about</loc>
-    <changefreq>yearly</changefreq>
-    <priority>0.4</priority>
+    <lastmod>2026-09-19</lastmod>
   </url>
   <url>
     <loc>https://playitnow.io/contact</loc>
-    <changefreq>yearly</changefreq>
-    <priority>0.3</priority>
+    <lastmod>2026-09-19</lastmod>
   </url>
   <url>
     <loc>https://playitnow.io/privacy</loc>
-    <changefreq>yearly</changefreq>
-    <priority>0.2</priority>
+    <lastmod>2026-09-19</lastmod>
   </url>
   <url>
     <loc>https://playitnow.io/terms</loc>
-    <changefreq>yearly</changefreq>
-    <priority>0.2</priority>
+    <lastmod>2026-09-19</lastmod>
   </url>
 </urlset>
